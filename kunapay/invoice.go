@@ -1,8 +1,10 @@
 package kunapay
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // InvoiceService handles communication with the invoice related
@@ -10,7 +12,7 @@ type InvoiceService struct {
 	client *Client
 }
 
-// Invoice represents a KunaPay invoice.
+// Invoice represents a KunaPay invoice response.
 type Invoice struct {
 	ID               string `json:"id"`
 	Status           string `json:"status"`
@@ -25,7 +27,7 @@ type Invoice struct {
 	CreatedAt        string `json:"createdAt"`
 }
 
-// InvoiceDetail represents a KunaPay invoice details.
+// InvoiceDetail represents a KunaPay invoice details response.
 type InvoiceDetail struct {
 	Invoice
 	CreatorID          string       `json:"creatorId"`
@@ -53,7 +55,7 @@ type Transactions struct {
 	PaymentCode     string   `json:"paymentCode"`
 }
 
-// InvoiceCurrency represents a KunaPay invoice currencies.
+// InvoiceCurrency represents a KunaPay invoice currencies response.
 type InvoiceCurrency struct {
 	Code        string `json:"code"`
 	Name        string `json:"name"`
@@ -83,8 +85,8 @@ type CreateInvoiceResponse struct {
 
 // Create creates invoice for a client for a specified amount.
 // https://docs-pay.kuna.io/reference/invoicecontroller_createinvoice
-func (s *InvoiceService) Create(request CreateInvoiceRequest) (*CreateInvoiceResponse, *http.Response, error) {
-	req, err := s.client.NewRequest("POST", "invoice", request)
+func (s *InvoiceService) Create(ctx context.Context, request CreateInvoiceRequest) (*CreateInvoiceResponse, *http.Response, error) {
+	req, err := s.client.NewRequest(ctx, http.MethodPost, "invoice", request)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -98,10 +100,64 @@ func (s *InvoiceService) Create(request CreateInvoiceRequest) (*CreateInvoiceRes
 	return createResp, resp, err
 }
 
+// InvoiceListOpts specifies the optional parameters to the InvoiceService.List method.
+type InvoiceListOpts struct {
+	Take             int64
+	Skip             int64
+	CreatedFrom      string
+	CreatedTo        string
+	CompletedFrom    string
+	CompletedTo      string
+	ExternalOrderID  string
+	InvoiceAssetCode string
+	PaymentAssetCode string
+	OrderBy          string
+}
+
+func (o *InvoiceListOpts) values() url.Values {
+	v := url.Values{}
+	if o.Take > 0 {
+		v.Add("take", fmt.Sprintf("%d", o.Take))
+	}
+	if o.Skip > 0 {
+		v.Add("skip", fmt.Sprintf("%d", o.Skip))
+	}
+	if o.CreatedFrom != "" {
+		v.Add("createdFrom", o.CreatedFrom)
+	}
+	if o.CreatedTo != "" {
+		v.Add("createdTo", o.CreatedTo)
+	}
+	if o.CompletedFrom != "" {
+		v.Add("completedFrom", o.CompletedFrom)
+	}
+	if o.CompletedTo != "" {
+		v.Add("completedTo", o.CompletedTo)
+	}
+	if o.ExternalOrderID != "" {
+		v.Add("externalOrderId", o.ExternalOrderID)
+	}
+	if o.InvoiceAssetCode != "" {
+		v.Add("invoiceAssetCode", o.InvoiceAssetCode)
+	}
+	if o.PaymentAssetCode != "" {
+		v.Add("paymentAssetCode", o.PaymentAssetCode)
+	}
+	if o.OrderBy != "" {
+		v.Add("orderBy", o.OrderBy)
+	}
+
+	return v
+}
+
 // List returns crypto invoices list.
 // https://docs-pay.kuna.io/reference/invoicecontroller_getinvoices
-func (s *InvoiceService) List() ([]*Invoice, *http.Response, error) {
-	req, err := s.client.NewRequest("GET", "invoice", nil)
+func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*Invoice, *http.Response, error) {
+	u := "invoice"
+	if opts != nil {
+		u += "?" + opts.values().Encode()
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,9 +174,9 @@ func (s *InvoiceService) List() ([]*Invoice, *http.Response, error) {
 // Get returns detailed information on a single crypto invoice.
 // The invoice identifier is passed in the ID parameter.
 // https://docs-pay.kuna.io/reference/invoicecontroller_getinvoicebyid
-func (s *InvoiceService) Get(ID string) (*InvoiceDetail, *http.Response, error) {
+func (s *InvoiceService) Get(ctx context.Context, ID string) (*InvoiceDetail, *http.Response, error) {
 	u := fmt.Sprintf("invoice/%s", ID)
-	req, err := s.client.NewRequest("GET", u, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -134,10 +190,32 @@ func (s *InvoiceService) Get(ID string) (*InvoiceDetail, *http.Response, error) 
 	return invoice, resp, err
 }
 
+// InvoiceUpdateOpts specifies the optional parameters to the InvoiceService.Currencies method.
+type InvoiceCurrencyListOpts struct {
+	Take int64
+	Skip int64
+}
+
+func (o *InvoiceCurrencyListOpts) values() url.Values {
+	v := url.Values{}
+	if o.Take > 0 {
+		v.Add("take", fmt.Sprintf("%d", o.Take))
+	}
+	if o.Skip > 0 {
+		v.Add("skip", fmt.Sprintf("%d", o.Skip))
+	}
+
+	return v
+}
+
 // Currencies returns information on available crypto currencies for invoice creation.
 // https://docs-pay.kuna.io/reference/invoicecontroller_getinvoiceassets
-func (s *InvoiceService) Currencies() ([]*InvoiceCurrency, *http.Response, error) {
-	req, err := s.client.NewRequest("GET", "invoice/assets", nil)
+func (s *InvoiceService) Currencies(ctx context.Context, opts *InvoiceCurrencyListOpts) ([]*InvoiceCurrency, *http.Response, error) {
+	u := "invoice/assets"
+	if opts != nil {
+		u += "?" + opts.values().Encode()
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}

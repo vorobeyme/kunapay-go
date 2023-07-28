@@ -1,8 +1,10 @@
 package kunapay
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // WithdrawService handles communication with the withdraw related.
@@ -54,8 +56,8 @@ type CreateWithdrawResponse struct {
 
 // Create create withdraw in crypto to any specified address.
 // https://docs-pay.kuna.io/reference/withdrawcontroller_makewithdraw
-func (s *WithdrawService) Create(request CreateWithdrawRequest) (*CreateWithdrawResponse, *http.Response, error) {
-	req, err := s.client.NewRequest("POST", "withdraw", request)
+func (s *WithdrawService) Create(ctx context.Context, request CreateWithdrawRequest) (*CreateWithdrawResponse, *http.Response, error) {
+	req, err := s.client.NewRequest(ctx, http.MethodPost, "withdraw", request)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,9 +73,9 @@ func (s *WithdrawService) Create(request CreateWithdrawRequest) (*CreateWithdraw
 
 // Methods returns information on available withdraw methods.
 // https://docs-pay.kuna.io/reference/withdrawcontroller_prerequestwithdraw
-func (s *WithdrawService) Methods(asset string) ([]*Withdraw, *http.Response, error) {
-	u := fmt.Sprintf("withdraw/pre-request%s", asset)
-	req, err := s.client.NewRequest("GET", u, nil)
+func (s *WithdrawService) Methods(ctx context.Context, asset string) ([]*Withdraw, *http.Response, error) {
+	u := fmt.Sprintf("withdraw/pre-request?asset=%s", strings.ToUpper(asset))
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
