@@ -1,6 +1,10 @@
 package kunapay
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+	"strings"
+)
 
 // AssetService handles communication with the asset related
 type AssetService struct {
@@ -19,10 +23,25 @@ type Asset struct {
 	} `json:"icons"`
 }
 
+// BalanceListOpts specifies the optional parameters to the AssetService.Balance method.
+type BalanceListOpts struct {
+	AssetCodes []string
+}
+
+// values returns a string of values in the format: "BTC,ETH,..."
+func (o *BalanceListOpts) values() string {
+	assets := strings.Join(o.AssetCodes[:], ",")
+	return strings.ToUpper(assets)
+}
+
 // Balance returns the balance of the asset.
 // https://docs-pay.kuna.io/reference/assetcontroller_getbalances
-func (s *AssetService) Balance() ([]*Asset, *http.Response, error) {
-	req, err := s.client.NewRequest("GET", "assets/balance", nil)
+func (s *AssetService) Balance(ctx context.Context, opts *BalanceListOpts) ([]*Asset, *http.Response, error) {
+	u := "assets/balance"
+	if opts != nil {
+		u += "?assetCodes=" + opts.values()
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -1,6 +1,9 @@
 package kunapay
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 // TransactionService handles communication with the transaction related.
 type TransactionService struct {
@@ -24,8 +27,8 @@ type Transaction struct {
 
 // List returns information on all invoices and withdrawal operations.
 // https://docs-pay.kuna.io/reference/transactioncontroller_gettransactions
-func (s *TransactionService) List() ([]*Transaction, *http.Response, error) {
-	req, err := s.client.NewRequest("GET", "transaction", nil)
+func (s *TransactionService) List(ctx context.Context) ([]*Transaction, *http.Response, error) {
+	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction", http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -42,8 +45,8 @@ func (s *TransactionService) List() ([]*Transaction, *http.Response, error) {
 // Get returns detailed information on a single transaction.
 // The transaction identifier is passed in the ID parameter.
 // https://docs-pay.kuna.io/reference/transactioncontroller_gettransactionbyid
-func (s *TransactionService) Get(ID string) (*Transaction, *http.Response, error) {
-	req, err := s.client.NewRequest("GET", "transaction/"+ID, nil)
+func (s *TransactionService) Get(ctx context.Context, ID string) (*Transaction, *http.Response, error) {
+	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction/"+ID, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}

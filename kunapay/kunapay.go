@@ -2,11 +2,15 @@ package kunapay
 
 import (
 	"bytes"
+	"context"
+	"crypto/sha512"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"runtime"
+	"time"
 )
 
 const (
@@ -29,9 +33,15 @@ type Client struct {
 	baseURL *url.URL
 
 	// API key used to make authenticated API calls.
-	apiKey string
+	// apiKey string
 
-	// User agent used when communicating with the KunaPay API.
+	// Private key used to make authenticated API calls.
+	privateKey string
+
+	// Public key used to make authenticated API calls.
+	publicKey string
+
+	// User agent used when communicating with the API.
 	userAgent string
 
 	// HTTP client used to communicate with the API.
@@ -46,7 +56,7 @@ type Client struct {
 
 // NewClient returns a new KunaPay API client.
 // If a nil httpClient is provided, http.DefaultClient will be used.
-func NewClient(apiKey string, httpClient *http.Client) *Client {
+func New(publicKey, privateKey string, httpClient *http.Client) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
@@ -54,10 +64,11 @@ func NewClient(apiKey string, httpClient *http.Client) *Client {
 	baseURL, _ := url.Parse(apiURL)
 
 	client := &Client{
-		client:    httpClient,
-		baseURL:   baseURL,
-		apiKey:    apiKey,
-		userAgent: userAgent,
+		client:     httpClient,
+		baseURL:    baseURL,
+		privateKey: privateKey,
+		publicKey:  publicKey,
+		userAgent:  userAgent,
 	}
 
 	client.Asset = &AssetService{client: client}
@@ -72,7 +83,7 @@ func NewClient(apiKey string, httpClient *http.Client) *Client {
 // A relative URL can be provided in the path, in which case it is resolved relative
 // to the baseURL of the Client.
 // If specified, the value pointed to by body is JSON encoded and included as the request body.
-func (c *Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {
+func (c *Client) NewRequest(ctx context.Context, method, path string, body interface{}) (*http.Request, error) {
 	rel, err := url.Parse(path)
 	if err != nil {
 		return nil, err
@@ -80,33 +91,27 @@ func (c *Client) NewRequest(method, path string, body interface{}) (*http.Reques
 
 	u := c.baseURL.ResolveReference(rel)
 
-	var req *http.Request
+	var buf io.ReadWriter
+	if body != nil {
+		buf = new(bytes.Buffer)
+		err := json.NewEncoder(buf).Encode(body)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	switch method {
-	case http.MethodGet, http.MethodHead, http.MethodOptions:
-		req, err = http.NewRequest(method, u.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		buf := new(bytes.Buffer)
-		if body != nil {
-			err = json.NewEncoder(buf).Encode(body)
-			if err != nil {
-				return nil, err
-			}
-		}
-		req, err = http.NewRequest(method, u.String(), buf)
-		if err != nil {
-			return nil, err
-		}
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), buf)
+	if err != nil {
+		return nil, err
 	}
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("Authorization", c.apiKey)
+	req.Header.Set("nonce", fmt.Sprint(time.Now().UnixNano()))
+	req.Header.Set("signature", c.Sign(req.Header.Get("nonce"), u.String(), buf.(*bytes.Buffer).String()))
+	req.Header.Set("public-key", c.publicKey)
 
 	return req, nil
 }
@@ -127,4 +132,10 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 	}()
 
 	return resp, err
+}
+
+// Sign calculates the signature for the request.
+// TODO: implement
+func (c *Client) Sign(nonce, url string, body string) string {
+	return ""
 }
