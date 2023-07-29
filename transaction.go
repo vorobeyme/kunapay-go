@@ -2,13 +2,32 @@ package kunapay
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 )
 
 // TransactionService handles communication with the transaction related.
 type TransactionService struct {
 	client *Client
 }
+
+// Transaction status.
+const (
+	StatusCreated            = "Created"
+	StatusCanceled           = "Canceled"
+	StatusPartiallyProcessed = "PartiallyProcessed"
+	StatusProcessing         = "Processing"
+	StatusProcessed          = "Processed"
+)
+
+// Transaction type.
+const (
+	TypeDeposit  = "Deposit"
+	TypeWithdraw = "Withdraw"
+	TypeRefund   = "Refund"
+)
 
 // Transaction represents a KunaPay transaction.
 type Transaction struct {
@@ -22,13 +41,51 @@ type Transaction struct {
 	PaymentCode     string `json:"paymentCode"`
 	Type            string `json:"type"`
 	CreatedAt       string `json:"createdAt"`
-	InvoiceID       string `json:"invoiceId"`
+	InvoiceID       string `json:"invoiceId,omitempty"`
+}
+
+type TransactionListOpts struct {
+	Take        int64
+	Skip        int64
+	Asset       string
+	CreatedFrom *time.Time
+	CreatedTo   *time.Time
+	OrderBy     string
+}
+
+func (o *TransactionListOpts) values() url.Values {
+	v := url.Values{}
+	if o.Take > 0 {
+		v.Add("take", fmt.Sprintf("%d", o.Take))
+	}
+	if o.Skip > 0 {
+		v.Add("skip", fmt.Sprintf("%d", o.Skip))
+	}
+	if o.Asset != "" {
+		v.Add("asset", string(o.Asset))
+	}
+	if o.CreatedFrom != nil {
+		v.Add("createdFrom", o.CreatedFrom.Format(time.RFC3339))
+	}
+	if o.CreatedTo != nil {
+		v.Add("createdTo", o.CreatedTo.Format(time.RFC3339))
+	}
+	if o.OrderBy != "" {
+		v.Add("orderBy", o.OrderBy)
+	}
+
+	return v
 }
 
 // List returns information on all invoices and withdrawal operations.
 // https://docs-pay.kuna.io/reference/transactioncontroller_gettransactions
-func (s *TransactionService) List(ctx context.Context) ([]*Transaction, *http.Response, error) {
-	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction", http.NoBody)
+func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts) ([]*Transaction, *http.Response, error) {
+	u := "transaction"
+	if opts != nil {
+		u += "?" + opts.values().Encode()
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}

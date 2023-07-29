@@ -34,9 +34,9 @@ func (o *BalanceListOpts) values() string {
 	return strings.ToUpper(assets)
 }
 
-// Balance returns the balance of the asset.
+// GetBalance returns the balance of the asset.
 // https://docs-pay.kuna.io/reference/assetcontroller_getbalances
-func (s *AssetService) Balance(ctx context.Context, opts *BalanceListOpts) ([]*Asset, *http.Response, error) {
+func (s *AssetService) GetBalance(ctx context.Context, opts *BalanceListOpts) ([]*Asset, *http.Response, error) {
 	u := "assets/balance"
 	if opts != nil {
 		u += "?assetCodes=" + opts.values()
