@@ -14,19 +14,20 @@ type WithdrawService struct {
 
 // Withdraw represents a KunaPay withdraw.
 type Withdraw struct {
-	Code        string   `json:"code"`
-	Asset       string   `json:"asset"`
-	Network     string   `json:"network"`
-	Position    int64    `json:"position"`
-	Name        string   `json:"name"`
-	Icon        string   `json:"icon"`
-	Description string   `json:"description"`
-	CustomTitle string   `json:"customTitle"`
-	Fields      []Fields `json:"fields"`
+	Code        string  `json:"code"`
+	Asset       string  `json:"asset"`
+	Network     string  `json:"network"`
+	Position    int64   `json:"position"`
+	Name        string  `json:"name"`
+	Icon        string  `json:"icon"`
+	Description string  `json:"description"`
+	CustomTitle string  `json:"customTitle"`
+	Fields      []Field `json:"fields"`
 }
 
-// Fields represents a KunaPay withdraw fields.
-type Fields struct {
+// Field represents a KunaPay withdraw fields that should be used
+// with withdraw request.
+type Field struct {
 	Name          string `json:"name"`
 	Label         string `json:"label"`
 	Description   string `json:"description"`
@@ -71,9 +72,9 @@ func (s *WithdrawService) Create(ctx context.Context, request CreateWithdrawRequ
 	return createResp, resp, err
 }
 
-// Methods returns information on available withdraw methods.
+// GetMethods returns information on available withdraw methods.
 // https://docs-pay.kuna.io/reference/withdrawcontroller_prerequestwithdraw
-func (s *WithdrawService) Methods(ctx context.Context, asset string) ([]*Withdraw, *http.Response, error) {
+func (s *WithdrawService) GetMethods(ctx context.Context, asset string) ([]*Withdraw, *http.Response, error) {
 	u := fmt.Sprintf("withdraw/pre-request?asset=%s", strings.ToUpper(asset))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {

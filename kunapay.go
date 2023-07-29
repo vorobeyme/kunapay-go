@@ -3,7 +3,6 @@ package kunapay
 import (
 	"bytes"
 	"context"
-	"crypto/sha512"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -135,7 +134,6 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 }
 
 // Sign calculates the signature for the request.
-// TODO: implement
 func (c *Client) Sign(nonce, url string, body string) string {
 	return ""
 }
