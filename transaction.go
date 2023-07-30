@@ -90,29 +90,38 @@ func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts
 		return nil, nil, err
 	}
 
-	var transactions []*Transaction
-	resp, err := s.client.Do(req, &transactions)
+	var root struct {
+		Data []*Transaction `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return transactions, resp, err
+	return root.Data, resp, err
 }
 
 // Get returns detailed information on a single transaction.
 // The transaction identifier is passed in the ID parameter.
 // https://docs-pay.kuna.io/reference/transactioncontroller_gettransactionbyid
 func (s *TransactionService) Get(ctx context.Context, ID string) (*Transaction, *http.Response, error) {
+	if ID == "" {
+		return nil, nil, fmt.Errorf("transaction ID is required")
+	}
 	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction/"+ID, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var transaction *Transaction
-	resp, err := s.client.Do(req, &transaction)
+	var root struct {
+		Data *Transaction `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return transaction, resp, err
+	return root.Data, resp, err
 }

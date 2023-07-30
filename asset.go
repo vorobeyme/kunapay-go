@@ -46,11 +46,14 @@ func (s *AssetService) GetBalance(ctx context.Context, opts *BalanceListOpts) ([
 		return nil, nil, err
 	}
 
-	var assets []*Asset
-	resp, err := s.client.Do(req, &assets)
+	var root struct {
+		Data []*Asset `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return assets, resp, err
+	return root.Data, resp, err
 }

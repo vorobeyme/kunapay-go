@@ -130,6 +130,10 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 		}
 	}()
 
+	if v != nil {
+		err = json.NewDecoder(resp.Body).Decode(v)
+	}
+
 	return resp, err
 }
 

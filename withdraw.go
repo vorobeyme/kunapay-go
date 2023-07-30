@@ -14,20 +14,20 @@ type WithdrawService struct {
 
 // Withdraw represents a KunaPay withdraw.
 type Withdraw struct {
-	Code        string  `json:"code"`
-	Asset       string  `json:"asset"`
-	Network     string  `json:"network"`
-	Position    int64   `json:"position"`
-	Name        string  `json:"name"`
-	Icon        string  `json:"icon"`
-	Description string  `json:"description"`
-	CustomTitle string  `json:"customTitle"`
-	Fields      []Field `json:"fields"`
+	Code        string          `json:"code"`
+	Asset       string          `json:"asset"`
+	Network     string          `json:"network"`
+	Position    int64           `json:"position"`
+	Name        string          `json:"name"`
+	Icon        string          `json:"icon"`
+	Description string          `json:"description"`
+	CustomTitle string          `json:"customTitle"`
+	Fields      []WithdrawField `json:"fields"`
 }
 
 // Field represents a KunaPay withdraw fields that should be used
 // with withdraw request.
-type Field struct {
+type WithdrawField struct {
 	Name          string `json:"name"`
 	Label         string `json:"label"`
 	Description   string `json:"description"`
@@ -49,6 +49,20 @@ type CreateWithdrawRequest struct {
 	CallbackUrl   string            `json:"callbackUrl,omitempty"`
 }
 
+func (r *CreateWithdrawRequest) validate() error {
+	if r.Amount == "" {
+		return fmt.Errorf("amount is required")
+	}
+	if r.Asset == "" {
+		return fmt.Errorf("asset code is required")
+	}
+	if r.PaymentMethod == "" {
+		return fmt.Errorf("payment method is required")
+	}
+
+	return nil
+}
+
 // CreateWithdrawResponse represents a KunaPay create withdraw response.
 type CreateWithdrawResponse struct {
 	ID      string `json:"id"`
@@ -57,35 +71,47 @@ type CreateWithdrawResponse struct {
 
 // Create create withdraw in crypto to any specified address.
 // https://docs-pay.kuna.io/reference/withdrawcontroller_makewithdraw
-func (s *WithdrawService) Create(ctx context.Context, request CreateWithdrawRequest) (*CreateWithdrawResponse, *http.Response, error) {
+func (s *WithdrawService) Create(ctx context.Context, request *CreateWithdrawRequest) (*CreateWithdrawResponse, *http.Response, error) {
+	if err := request.validate(); err != nil {
+		return nil, nil, err
+	}
 	req, err := s.client.NewRequest(ctx, http.MethodPost, "withdraw", request)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var createResp *CreateWithdrawResponse
-	resp, err := s.client.Do(req, &createResp)
+	var root struct {
+		Data *CreateWithdrawResponse `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return createResp, resp, err
+	return root.Data, resp, err
 }
 
 // GetMethods returns information on available withdraw methods.
 // https://docs-pay.kuna.io/reference/withdrawcontroller_prerequestwithdraw
 func (s *WithdrawService) GetMethods(ctx context.Context, asset string) ([]*Withdraw, *http.Response, error) {
+	if asset == "" {
+		return nil, nil, fmt.Errorf("asset code is required")
+	}
 	u := fmt.Sprintf("withdraw/pre-request?asset=%s", strings.ToUpper(asset))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var withdraws []*Withdraw
-	resp, err := s.client.Do(req, &withdraws)
+	var root struct {
+		Data []*Withdraw `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return withdraws, resp, err
+	return root.Data, resp, err
 }

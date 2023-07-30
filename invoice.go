@@ -43,21 +43,40 @@ type Invoice struct {
 
 // InvoiceDetail represents a KunaPay invoice details response.
 type InvoiceDetail struct {
-	Invoice
+	ID                 string               `json:"id"`
+	Status             string               `json:"status"`
+	ExternalOrderID    string               `json:"externalOrderId"`
+	AddressID          string               `json:"addressId"`
 	CreatorID          string               `json:"creatorId"`
+	InvoiceAmount      string               `json:"invoiceAmount"`
+	PaymentAmount      string               `json:"paymentAmount"`
+	InvoiceAssetCode   string               `json:"invoiceAssetCode"`
+	PaymentAssetCode   string               `json:"paymentAssetCode"`
 	Transactions       []InvoiceTransaction `json:"transactions"`
 	ProductCategory    string               `json:"productCategory"`
 	ProductDescription string               `json:"productDescription"`
 	IsCreatedByAPI     bool                 `json:"isCreatedByApi"`
+	ExpireAt           string               `json:"expireAt"`
+	CompletedAt        string               `json:"completedAt"`
+	CreatedAt          string               `json:"createdAt"`
 	UpdateAt           string               `json:"updatedAt"`
 }
 
 // Transactions represents a KunaPay transactions associated with the invoice.
 type InvoiceTransaction struct {
-	Transaction
-	CreatorComment string   `json:"creatorComment"`
-	Reason         []string `json:"reason"`
-	UpdateAt       string   `json:"updatedAt"`
+	Address         string   `json:"address"`
+	Amount          string   `json:"amount"`
+	Asset           string   `json:"asset"`
+	CreatorComment  string   `json:"creatorComment"`
+	Fee             string   `json:"fee"`
+	ID              string   `json:"id"`
+	ProcessedAmount string   `json:"processedAmount"`
+	Reason          []string `json:"reason"`
+	Status          string   `json:"status"`
+	Type            string   `json:"type"`
+	CreatedAt       string   `json:"createdAt"`
+	UpdatedAt       string   `json:"updatedAt"`
+	PaymentCode     string   `json:"paymentCode"`
 }
 
 // InvoiceCurrency represents a KunaPay invoice currencies response.
@@ -100,7 +119,7 @@ type CreateInvoiceResponse struct {
 
 // Create creates invoice for a client for a specified amount.
 // https://docs-pay.kuna.io/reference/invoicecontroller_createinvoice
-func (s *InvoiceService) Create(ctx context.Context, request CreateInvoiceRequest) (*CreateInvoiceResponse, *http.Response, error) {
+func (s *InvoiceService) Create(ctx context.Context, request *CreateInvoiceRequest) (*CreateInvoiceResponse, *http.Response, error) {
 	if err := request.validate(); err != nil {
 		return nil, nil, err
 	}
@@ -109,13 +128,16 @@ func (s *InvoiceService) Create(ctx context.Context, request CreateInvoiceReques
 		return nil, nil, err
 	}
 
-	var createResp *CreateInvoiceResponse
-	resp, err := s.client.Do(req, &createResp)
+	var root struct {
+		Data *CreateInvoiceResponse `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return createResp, resp, err
+	return root.Data, resp, err
 }
 
 type InvoiceOrderBy string
@@ -190,32 +212,41 @@ func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*In
 		return nil, nil, err
 	}
 
-	var invoices []*Invoice
-	resp, err := s.client.Do(req, &invoices)
+	var root struct {
+		Data []*Invoice `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return invoices, resp, err
+	return root.Data, resp, err
 }
 
 // Get returns detailed information on a single crypto invoice.
 // The invoice identifier is passed in the ID parameter.
 // https://docs-pay.kuna.io/reference/invoicecontroller_getinvoicebyid
 func (s *InvoiceService) Get(ctx context.Context, ID string) (*InvoiceDetail, *http.Response, error) {
+	if ID == "" {
+		return nil, nil, fmt.Errorf("invoice ID is required")
+	}
 	u := fmt.Sprintf("invoice/%s", ID)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var invoice *InvoiceDetail
-	resp, err := s.client.Do(req, &invoice)
+	var root struct {
+		Data *InvoiceDetail `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return invoice, resp, err
+	return root.Data, resp, err
 }
 
 // InvoiceUpdateOpts specifies the optional parameters to the InvoiceService.Currencies method.
@@ -248,11 +279,14 @@ func (s *InvoiceService) GetCurrencies(ctx context.Context, opts *InvoiceCurrenc
 		return nil, nil, err
 	}
 
-	var currencies []*InvoiceCurrency
-	resp, err := s.client.Do(req, &currencies)
+	var root struct {
+		Data []*InvoiceCurrency `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return currencies, resp, err
+	return root.Data, resp, err
 }
