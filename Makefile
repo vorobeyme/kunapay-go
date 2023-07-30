@@ -3,7 +3,7 @@ GOTEST=go test
 GOLINT=golangci-lint
 GOFMT=gofmt
 
-PACKAGE_PATH=./kunapay
+PACKAGE_PATH=./
 
 TEST_FLAGS=-race -v
 TEST_COVERAGE_FLAGS=-race -coverprofile=coverage.out -covermode=atomic
@@ -30,6 +30,6 @@ fmt:
 
 clean:
 	$(GOCLEAN)
-	rm -f coverage.out coverage.html
+	rm -f coverage.txt coverage.html
 
 .PHONY: clean test lint cover cover-html fmt
