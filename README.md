@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/vorobeyme/kunapay-go?status.svg)](https://godoc.org/github.com/vorobeyme/kunapay-go)
 [![Go](https://github.com/vorobeyme/kunapay-go/actions/workflows/go.yml/badge.svg)](https://github.com/vorobeyme/kunapay-go/actions/workflows/go.yml)
-[![codecov](https://codecov.io/gh/vorobeyme/kunapay-go/branch/main/graph/badge.svg?token=III91WIPLL)](https://codecov.io/gh/vorobeyme/kunapay-go)
+[![codecov](https://codecov.io/gh/vorobeyme/kunapay-go/branch/main/graph/badge.svg?token=HV37K62JA3)](https://codecov.io/gh/vorobeyme/kunapay-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vorobeyme/kunapay-go)](https://goreportcard.com/report/github.com/vorobeyme/kunapay-go)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
