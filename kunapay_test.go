@@ -3,10 +3,12 @@ package kunapay
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -34,12 +36,12 @@ func testURL(t *testing.T, r *http.Request, want string) {
 	}
 }
 
-func testHeader(t *testing.T, r *http.Request, header string, want string) {
-	t.Helper()
-	if got := r.Header.Get(header); got != want {
-		t.Errorf("Header.Get(%q) returned %q, want %q", header, got, want)
-	}
-}
+// func testHeader(t *testing.T, r *http.Request, header string, want string) {
+// 	t.Helper()
+// 	if got := r.Header.Get(header); got != want {
+// 		t.Errorf("Header.Get(%q) returned %q, want %q", header, got, want)
+// 	}
+// }
 
 func testBody(t *testing.T, r *http.Request, want string) {
 	buf := new(bytes.Buffer)
@@ -115,4 +117,77 @@ func TestDo_httpBadRequest(t *testing.T) {
 
 func TestDo_redirectLoop(t *testing.T) {
 	t.Skip("TODO")
+}
+
+func TestCheckResponse(t *testing.T) {
+
+	tests := []struct {
+		title    string
+		input    *http.Response
+		expected *ErrorResponse
+	}{
+		{
+			title: "400 Bad Request",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body: io.NopCloser(strings.NewReader(`{
+					"errors": [{
+						"code": "BAD_REQUEST",
+						"message": "Field must be a valid type"
+					}]
+				}`)),
+			},
+			expected: &ErrorResponse{
+				Response: &http.Response{},
+				Errors: []Error{
+					{
+						Code:    "BAD_REQUEST",
+						Message: "Field must be a valid type",
+					},
+				},
+			},
+		},
+		{
+			title: "no body",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body:       io.NopCloser(strings.NewReader("")),
+			},
+			expected: &ErrorResponse{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			err := CheckResponse(test.input).(*ErrorResponse)
+			if err == nil {
+				t.Errorf("Expected error response.")
+			}
+			test.expected.Response = test.input
+
+			if !reflect.DeepEqual(err, test.expected) {
+				t.Errorf("Error = %#v, want %#v", err, test.expected)
+			}
+		})
+	}
+}
+
+func TestErrorResponse_Error(t *testing.T) {
+	res := &http.Response{
+		Request: &http.Request{},
+	}
+	err := ErrorResponse{
+		Response: res,
+		Errors: []Error{
+			{
+				Code:    "BAD_REQUEST",
+				Message: "Field must be a valid type",
+			},
+		},
+	}
+	if err.Error() == "" {
+		t.Errorf("Expected non-empty ErrorResponse.Error()")
+	}
 }
