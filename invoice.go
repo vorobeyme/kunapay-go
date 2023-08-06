@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// InvoiceService handles communication with the invoice related
+// InvoiceService handles communication with the invoice related.
 type InvoiceService struct {
 	client *Client
 }
@@ -102,6 +102,7 @@ type CreateInvoiceRequest struct {
 	CallbackUrl        string `json:"callbackUrl,omitempty"`
 }
 
+// validate checks if the request values are valid.
 func (r *CreateInvoiceRequest) validate() error {
 	if r.Amount == "" {
 		return fmt.Errorf("amount is required")
@@ -118,7 +119,8 @@ type CreateInvoiceResponse struct {
 }
 
 // Create creates invoice for a client for a specified amount.
-// https://docs-pay.kuna.io/reference/invoicecontroller_createinvoice
+//
+// API docs: https://docs-pay.kuna.io/reference/invoicecontroller_createinvoice
 func (s *InvoiceService) Create(ctx context.Context, request *CreateInvoiceRequest) (*CreateInvoiceResponse, *http.Response, error) {
 	if err := request.validate(); err != nil {
 		return nil, nil, err
@@ -150,7 +152,8 @@ const (
 	OrderByStatus           InvoiceOrderBy = "status"
 )
 
-// InvoiceListOpts specifies the optional parameters to the InvoiceService.List method.
+// InvoiceListOpts specifies the optional parameters to the
+// InvoiceService.List method.
 type InvoiceListOpts struct {
 	Take             int64
 	Skip             int64
@@ -164,6 +167,7 @@ type InvoiceListOpts struct {
 	OrderBy          InvoiceOrderBy
 }
 
+// values converts InvoiceListOpts to url.Values to be used in query string.
 func (o *InvoiceListOpts) values() url.Values {
 	v := url.Values{}
 	if o.Take > 0 {
@@ -201,7 +205,8 @@ func (o *InvoiceListOpts) values() url.Values {
 }
 
 // List returns crypto invoices list.
-// https://docs-pay.kuna.io/reference/invoicecontroller_getinvoices
+//
+// API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoices
 func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*Invoice, *http.Response, error) {
 	u := "invoice"
 	if opts != nil {
@@ -226,7 +231,8 @@ func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*In
 
 // Get returns detailed information on a single crypto invoice.
 // The invoice identifier is passed in the ID parameter.
-// https://docs-pay.kuna.io/reference/invoicecontroller_getinvoicebyid
+//
+// API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoicebyid
 func (s *InvoiceService) Get(ctx context.Context, ID string) (*InvoiceDetail, *http.Response, error) {
 	if ID == "" {
 		return nil, nil, fmt.Errorf("invoice ID is required")
@@ -249,12 +255,14 @@ func (s *InvoiceService) Get(ctx context.Context, ID string) (*InvoiceDetail, *h
 	return root.Data, resp, err
 }
 
-// InvoiceUpdateOpts specifies the optional parameters to the InvoiceService.Currencies method.
+// InvoiceUpdateOpts specifies the optional parameters to the
+// InvoiceService.Currencies method.
 type InvoiceCurrencyListOpts struct {
 	Take int64
 	Skip int64
 }
 
+// values converts InvoiceCurrencyListOpts to url.Values to be used in query string.
 func (o *InvoiceCurrencyListOpts) values() url.Values {
 	v := url.Values{}
 	if o.Take > 0 {
@@ -268,7 +276,8 @@ func (o *InvoiceCurrencyListOpts) values() url.Values {
 }
 
 // GetCurrencies returns information on available crypto currencies for invoice creation.
-// https://docs-pay.kuna.io/reference/invoicecontroller_getinvoiceassets
+//
+// API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoiceassets
 func (s *InvoiceService) GetCurrencies(ctx context.Context, opts *InvoiceCurrencyListOpts) ([]*InvoiceCurrency, *http.Response, error) {
 	u := "invoice/assets"
 	if opts != nil {

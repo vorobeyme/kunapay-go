@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// AssetService handles communication with the asset related
+// AssetService handles communication with the asset related.
 type AssetService struct {
 	client *Client
 }
@@ -35,7 +35,8 @@ func (o *BalanceListOpts) values() string {
 }
 
 // GetBalance returns the balance of the asset.
-// https://docs-pay.kuna.io/reference/assetcontroller_getbalances
+//
+// API docs: https://docs-pay.kuna.io/reference/assetcontroller_getbalances
 func (s *AssetService) GetBalance(ctx context.Context, opts *BalanceListOpts) ([]*Asset, *http.Response, error) {
 	u := "assets/balance"
 	if opts != nil {

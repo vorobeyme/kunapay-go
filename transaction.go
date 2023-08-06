@@ -13,20 +13,20 @@ type TransactionService struct {
 	client *Client
 }
 
-// Transaction status.
+// Transaction statuses.
 const (
-	StatusCreated            = "Created"
-	StatusCanceled           = "Canceled"
-	StatusPartiallyProcessed = "PartiallyProcessed"
-	StatusProcessing         = "Processing"
-	StatusProcessed          = "Processed"
+	TransactionStatusCreated            = "Created"
+	TransactionStatusCanceled           = "Canceled"
+	TransactionStatusProcessing         = "Processing"
+	TransactionStatusProcessed          = "Processed"
+	TransactionStatusPartiallyProcessed = "PartiallyProcessed"
 )
 
-// Transaction type.
+// Transaction types.
 const (
-	TypeDeposit  = "Deposit"
-	TypeWithdraw = "Withdraw"
-	TypeRefund   = "Refund"
+	TransactionTypeDeposit  = "Deposit"
+	TransactionTypeWithdraw = "Withdraw"
+	TransactionTypeRefund   = "Refund"
 )
 
 // Transaction represents a KunaPay transaction.
@@ -44,6 +44,8 @@ type Transaction struct {
 	InvoiceID       string `json:"invoiceId,omitempty"`
 }
 
+// TransactionListOpts specifies the optional parameters to the
+// TransactionService.List method.
 type TransactionListOpts struct {
 	Take        int64
 	Skip        int64
@@ -53,6 +55,7 @@ type TransactionListOpts struct {
 	OrderBy     string
 }
 
+// values converts TransactionListOpts to url.Values to be used in query string.
 func (o *TransactionListOpts) values() url.Values {
 	v := url.Values{}
 	if o.Take > 0 {
@@ -78,7 +81,8 @@ func (o *TransactionListOpts) values() url.Values {
 }
 
 // List returns information on all invoices and withdrawal operations.
-// https://docs-pay.kuna.io/reference/transactioncontroller_gettransactions
+// 
+// API docs: https://docs-pay.kuna.io/reference/transactioncontroller_gettransactions
 func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts) ([]*Transaction, *http.Response, error) {
 	u := "transaction"
 	if opts != nil {
@@ -104,7 +108,8 @@ func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts
 
 // Get returns detailed information on a single transaction.
 // The transaction identifier is passed in the ID parameter.
-// https://docs-pay.kuna.io/reference/transactioncontroller_gettransactionbyid
+//
+// API docs: https://docs-pay.kuna.io/reference/transactioncontroller_gettransactionbyid
 func (s *TransactionService) Get(ctx context.Context, ID string) (*Transaction, *http.Response, error) {
 	if ID == "" {
 		return nil, nil, fmt.Errorf("transaction ID is required")

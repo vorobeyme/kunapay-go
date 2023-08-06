@@ -49,6 +49,7 @@ type CreateWithdrawRequest struct {
 	CallbackUrl   string            `json:"callbackUrl,omitempty"`
 }
 
+// validate checks if request values are valid.
 func (r *CreateWithdrawRequest) validate() error {
 	if r.Amount == "" {
 		return fmt.Errorf("amount is required")
@@ -70,7 +71,8 @@ type CreateWithdrawResponse struct {
 }
 
 // Create create withdraw in crypto to any specified address.
-// https://docs-pay.kuna.io/reference/withdrawcontroller_makewithdraw
+//
+// API docs: https://docs-pay.kuna.io/reference/withdrawcontroller_makewithdraw
 func (s *WithdrawService) Create(ctx context.Context, request *CreateWithdrawRequest) (*CreateWithdrawResponse, *http.Response, error) {
 	if err := request.validate(); err != nil {
 		return nil, nil, err
@@ -93,7 +95,8 @@ func (s *WithdrawService) Create(ctx context.Context, request *CreateWithdrawReq
 }
 
 // GetMethods returns information on available withdraw methods.
-// https://docs-pay.kuna.io/reference/withdrawcontroller_prerequestwithdraw
+//
+// API docs: https://docs-pay.kuna.io/reference/withdrawcontroller_prerequestwithdraw
 func (s *WithdrawService) GetMethods(ctx context.Context, asset string) ([]*Withdraw, *http.Response, error) {
 	if asset == "" {
 		return nil, nil, fmt.Errorf("asset code is required")
