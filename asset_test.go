@@ -30,9 +30,9 @@ func TestAssetService_GetBalance(t *testing.T) {
 
 	expectedAssets := []*Asset{assetMock(), assetMock()}
 
-	mux.HandleFunc("/assets/balance", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/asset/balance", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		testURL(t, r, "/assets/balance?assetCodes=USDT,BTC")
+		testURL(t, r, "/v1/asset/balance?assetCodes=USDT,BTC")
 		fmt.Fprint(w, `{
 			"data": [
 				{
@@ -59,9 +59,9 @@ func TestAssetService_GetBalance(t *testing.T) {
 		}`)
 	})
 
-	assets, _, err := client.Asset.GetBalance(context.Background(), &BalanceListOpts{AssetCodes: []string{"USDT", "BTC"}})
+	assets, _, err := client.Asset.GetBalance(context.Background(), []string{"USDT", "BTC"}...)
 	if err != nil {
-		t.Errorf("Asset.GetBalance returnted error: %v", err)
+		t.Errorf("Asset.GetBalance returned error: %v", err)
 	}
 
 	if !reflect.DeepEqual(assets, expectedAssets) {
