@@ -1,8 +1,8 @@
 // Example of getting asset balance
 //
 // It's runnable with the following command:
-// export KUNAPAY_PUBLIC_KEY=bwumw6Q8nsvvwBSoIUWMHbaLEjGXKiToNtXXU2jQv6Q=
-// export KUNAPAY_PRIVATE_KEY=DNYKfHBWxNbfAa2fTl4+d6rfY04Y+W9Dd3KqEyVM2Eo=
+// export KUNAPAY_PUBLIC_KEY=your_public_key
+// export KUNAPAY_PRIVATE_KEY=your_private_key
 // go run examples/asset/main.go
 package main
 
@@ -26,7 +26,10 @@ func main() {
 		log.Fatal("Private key is not set")
 	}
 
-	client := kunapay.New(pubKey, privKey, nil)
+	client, err := kunapay.New(pubKey, privKey)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		var method string
@@ -39,12 +42,13 @@ func main() {
 		switch method {
 		case "balance":
 			fmt.Println("Getting balance...")
-			b, _, err := client.Asset.GetBalance(context.Background(), nil)
+			b, _, err := client.Asset.GetBalance(context.Background())
 			if err != nil {
 				log.Fatal(err)
 			}
 			for _, asset := range b {
-				fmt.Printf("%s: %s\n", asset.Code, asset.Balance)
+				fmt.Printf("Balance: %s\nLockBalance: %s\nCode: %s\nName: %s\nSVG: %s\nPNG: %s\n\n",
+					asset.Balance, asset.LockBalance, asset.Code, asset.Name, asset.Icons.SVG, asset.Icons.PNG)
 			}
 		default:
 			fmt.Println("Unknown method")
