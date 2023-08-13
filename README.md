@@ -1,6 +1,6 @@
 # kunapay-go
 
-[![GoDoc](https://godoc.org/github.com/vorobeyme/kunapay-go?status.svg)](https://godoc.org/github.com/vorobeyme/kunapay-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/vorobeyme/kunapay-go.svg)](https://pkg.go.dev/github.com/vorobeyme/kunapay-go)
 [![Go](https://github.com/vorobeyme/kunapay-go/actions/workflows/go.yml/badge.svg)](https://github.com/vorobeyme/kunapay-go/actions/workflows/go.yml)
 [![codecov](https://codecov.io/gh/vorobeyme/kunapay-go/branch/main/graph/badge.svg?token=HV37K62JA3)](https://codecov.io/gh/vorobeyme/kunapay-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vorobeyme/kunapay-go)](https://goreportcard.com/report/github.com/vorobeyme/kunapay-go)
@@ -21,24 +21,48 @@ go get github.com/vorobeyme/kunapay-go
 import "github.com/vorobeyme/kunapay-go"
 ```
 
-To begin, create a new KunaPay client, then use the available services to interact with various sections of the KunaPay API.
-
-For example, to list all transactions:
+To begin, create a new KunaPay client, then use the available services to interact with various sections of the KunaPay API.  
+For example, to get the balance of the assets:
 ```go
 package main
 
 import (
     "context"
     "fmt"
+    "log"
+    "os"
 
     "github.com/vorobeyme/kunapay-go"
 )
 
 func main() {
-    client := kunapay.New("public_key", "private_key", nil)
-    transactions, _, err := client.Transaction.List(context.Background(), &kunapay.TransactionListOpts{})
+    // Create a new API client using signature authentication with your public and private keys
+    client, err := kunapay.New(os.Getenv("KUNAPAY_PUBLIC_KEY"), os.Getenv("KUNAPAY_PRIVATE_KEY"))
+    if err != nil {
+        log.Fatal(err)
+    }
 
-    fmt.Println(transactions, err)
+    // Alternatively, you can use an API key
+    // client, err := kunapay.NewWithAPIKey(os.Getenv("KUNAPAY_API_KEY"))
+
+    // Create a new API object with a custom HTTP client and/or user agent
+    // client, err := kunapay.NewWithAPIKey(
+    //    os.Getenv("KUNAPAY_API_KEY"),
+    //    kunapay.WithHTTPClient(&http.Client{}),
+    //    kunapay.SetUserAgent("MyApp/1.0.0"),
+    // )
+
+    // API calls require a context
+    ctx := context.Background()
+
+    // Get the balance of the specified assets
+    balance, _, err := client.Assets.GetBalance(ctx, "btc", "uah")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Print the balance
+    fmt.Println(balance)
 }
 ```
 
