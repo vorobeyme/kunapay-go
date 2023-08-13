@@ -40,9 +40,9 @@ func TestWithdrawService_GetMethods(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/withdraw/pre-request", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/withdraw/pre-request", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		testURL(t, r, "/withdraw/pre-request?asset=USDT")
+		testURL(t, r, "/v1/withdraw/pre-request?asset=USDT")
 		fmt.Fprint(w, `{
 			"data": [
 				{
@@ -92,7 +92,7 @@ func TestWithdrawService_Create(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/withdraw", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/withdraw", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
 		fmt.Fprint(w, `{
 			"data": {

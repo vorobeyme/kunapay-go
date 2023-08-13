@@ -31,7 +31,7 @@ func TestTransactionService_Get(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/transaction/c94c0c95-e735-45ea-982e-a95f7f52ca49", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/transaction/c94c0c95-e735-45ea-982e-a95f7f52ca49", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		fmt.Fprint(w, `{
 			"data": {
@@ -70,9 +70,9 @@ func TestTransactionService_List(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/transaction", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/transaction", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		testURL(t, r, "/transaction?asset=ETH&createdFrom=2023-07-30T15%3A10%3A08%2B03%3A00&createdTo=2023-07-31T15%3A10%3A08%2B03%3A00&orderBy=createdAt&skip=10&take=10")
+		testURL(t, r, "/v1/transaction?asset=ETH&createdFrom=2023-07-30T15%3A10%3A08%2B03%3A00&createdTo=2023-07-31T15%3A10%3A08%2B03%3A00&orderBy=createdAt&skip=10&take=10")
 		fmt.Fprint(w, `{
 			"data": [
 				{

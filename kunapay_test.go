@@ -15,7 +15,7 @@ import (
 func setupClient() (client *Client, mux *http.ServeMux, teardown func()) {
 	mux = http.NewServeMux()
 	server := httptest.NewServer(mux)
-	client = New("public_key", "private_key", nil)
+	client, _ = NewWithAPIKey("API_key")
 	url, _ := url.Parse(server.URL)
 	client.baseURL = url
 
@@ -83,11 +83,11 @@ func testJSONMarshal(t *testing.T, v interface{}, want string) {
 	}
 }
 
-func TestNewClient(t *testing.T) {
+func TestNewClientWithSignture(t *testing.T) {
 	pubKey := "public_key"
 	privKey := "private_key"
 
-	c := New(pubKey, privKey, nil)
+	c, _ := New(pubKey, privKey)
 	if c.publicKey != pubKey {
 		t.Errorf("Client publicKey is %v, want %v", c.publicKey, pubKey)
 	}
@@ -100,7 +100,6 @@ func TestNewClient(t *testing.T) {
 	if c.baseURL.String() != apiURL {
 		t.Errorf("Client baseURL is %v, want %v", c.baseURL.String(), apiURL)
 	}
-
 }
 
 func TestNewRequest(t *testing.T) {
@@ -161,7 +160,7 @@ func TestCheckResponse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.title, func(t *testing.T) {
-			err := CheckResponse(test.input).(*ErrorResponse)
+			err := handleErrorResponse(test.input).(*ErrorResponse)
 			if err == nil {
 				t.Errorf("Expected error response.")
 			}
