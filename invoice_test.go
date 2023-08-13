@@ -32,7 +32,7 @@ func TestInvoiceService_CreateWithRequiredParams(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/invoice", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/invoice", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
 		testBody(t, r, `{"amount":"100.11","asset":"USDT"}`+"\n")
 		fmt.Fprint(w, `{
@@ -62,7 +62,7 @@ func TestInvoiceService_CreateWithAllParams(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/invoice", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/invoice", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "POST")
 		testBody(t, r, `{"amount":"100.011","asset":"USDT","externalOrderId":"c94c0c95-e735-45ea-982e-111111111111","productDescription":"Product description","productCategory":"Product category","callbackUrl":"https://example.com/callback"}`+"\n")
 		fmt.Fprint(w, `{
@@ -116,9 +116,9 @@ func TestInvoiceService_List(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/invoice", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/invoice", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		testURL(t, r, "/invoice")
+		testURL(t, r, "/v1/invoice")
 		fmt.Fprint(w, `{
 			"data": [
 				{
@@ -154,8 +154,8 @@ func TestInvoiceService_ListWithQueryParams(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/invoice", func(w http.ResponseWriter, r *http.Request) {
-		expectedURI := "/invoice?" +
+	mux.HandleFunc("/v1/invoice", func(w http.ResponseWriter, r *http.Request) {
+		expectedURI := "/v1/invoice?" +
 			"completedFrom=2023-07-30T15%3A10%3A08%2B03%3A00&" +
 			"completedTo=2023-07-31T15%3A10%3A08%2B03%3A00&" +
 			"createdFrom=2023-07-30T15%3A10%3A08%2B03%3A00&" +
@@ -220,9 +220,9 @@ func TestInvoiceService_Get(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/invoice/c94c0c95-e735-45ea-982e-a95f7f52ca49", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/invoice/c94c0c95-e735-45ea-982e-a95f7f52ca49", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		testURL(t, r, "/invoice/c94c0c95-e735-45ea-982e-a95f7f52ca49")
+		testURL(t, r, "/v1/invoice/c94c0c95-e735-45ea-982e-a95f7f52ca49")
 		fmt.Fprint(w, `{
 			"data": {
 				"id": "c94c0c95-e735-45ea-982e-a95f7f52ca49",
@@ -319,9 +319,9 @@ func TestInvoiceService_GetCurrencies(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	mux.HandleFunc("/invoice/assets", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/invoice/assets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
-		testURL(t, r, "/invoice/assets?skip=10&take=10")
+		testURL(t, r, "/v1/invoice/assets?skip=10&take=10")
 		fmt.Fprint(w, `{
 			"data": [
 				{

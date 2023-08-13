@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"runtime"
 	"time"
 )
 
@@ -19,14 +18,15 @@ const (
 	// libVersion is the current version of the library.
 	libVersion = "0.0.1"
 
-	// apiURL is the default base URL for the KunaPay API.
-	apiURL = "https://api-kunapayapp.kuna.io/v1/"
-)
+	apiURL     = "https://api-kunapayapp.kuna.io/"
+	apiVersion = "v1"
 
-var (
-	// userAgent is the default user agent string to use when sending requests
-	// to the KunaPay API.
-	userAgent = fmt.Sprintf("kunapay-go/%s (%s %s) go/%s", libVersion, runtime.GOOS, runtime.GOARCH, runtime.Version())
+	userAgent = "kunapay-go/" + libVersion
+
+	headerNonce     = "nonce"
+	headerSignature = "signature"
+	headerPublicKey = "public-key"
+	headerApiKey    = "api-key"
 )
 
 // Client manages communication with the KunaPay API.
@@ -35,7 +35,7 @@ type Client struct {
 	baseURL *url.URL
 
 	// API key used to make authenticated API calls.
-	// apiKey string
+	apiKey string
 
 	// Private key used to make authenticated API calls.
 	privateKey string
@@ -56,21 +56,49 @@ type Client struct {
 	Withdraw    *WithdrawService
 }
 
-// NewClient returns a new KunaPay API client.
-// If a nil httpClient is provided, http.DefaultClient will be used.
-func New(publicKey, privateKey string, httpClient *http.Client) *Client {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
+// New returns a new KunaPay API client that uses signature authentication
+// with the provided public and private keys.
+func New(publicKey, privateKey string, opts ...ClientOptions) (*Client, error) {
+	if publicKey == "" || privateKey == "" {
+		return nil, fmt.Errorf("public and private keys are required")
 	}
 
+	client, err := newClient(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	client.publicKey = publicKey
+	client.privateKey = privateKey
+
+	return client, err
+}
+
+// NewWithAPIKey returns a new KunaPay API client using the provided API key.
+func NewWithAPIKey(apiKey string, opts ...ClientOptions) (*Client, error) {
+	if apiKey == "" {
+		return nil, fmt.Errorf("api key is required")
+	}
+
+	client, err := newClient(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	client.apiKey = apiKey
+
+	return client, nil
+}
+
+type ClientOptions func(*Client) error
+
+// newClient returns a new KunaPay API client instance.
+func newClient(opts ...ClientOptions) (*Client, error) {
 	baseURL, _ := url.Parse(apiURL)
 
 	client := &Client{
-		client:     httpClient,
-		baseURL:    baseURL,
-		privateKey: privateKey,
-		publicKey:  publicKey,
-		userAgent:  userAgent,
+		baseURL:   baseURL,
+		userAgent: userAgent,
 	}
 
 	client.Asset = &AssetService{client: client}
@@ -78,17 +106,40 @@ func New(publicKey, privateKey string, httpClient *http.Client) *Client {
 	client.Transaction = &TransactionService{client: client}
 	client.Withdraw = &WithdrawService{client: client}
 
-	return client
+	for _, opt := range opts {
+		if err := opt(client); err != nil {
+			return nil, err
+		}
+	}
+
+	if client.client == nil {
+		client.client = http.DefaultClient
+	}
+
+	return client, nil
 }
 
-// RequestOption specifies the optional parameters to the Client.NewRequest method
-// that can modify a http.Request.
-type RequestOption func(req *http.Request)
+// WithHTTPClient sets the owning http.Client to use for API requests.
+func WithHTTPClient(client *http.Client) ClientOptions {
+	return func(c *Client) error {
+		c.client = client
+		return nil
+	}
+}
 
-// NewRequest creates an API request.
-// A relative URL can be provided in the path, it will be resolved in relation to the Client's baseURL.
-func (c *Client) NewRequest(ctx context.Context, method, path string, body interface{}, opts ...RequestOption) (*http.Request, error) {
-	rel, err := url.Parse(path)
+// SetUserAgent sets the custom user agent string to use when sending requests.
+func SetUserAgent(userAgent string) ClientOptions {
+	return func(c *Client) error {
+		c.userAgent = userAgent
+		return nil
+	}
+}
+
+// NewRequest creates an API request. A relative URL can be provided in the path,
+// it will be resolved in relation to the Client's baseURL. If specified,
+// the value pointed to by body will be JSON encoded and included as the request body.
+func (c *Client) NewRequest(ctx context.Context, method, path string, body any) (*http.Request, error) {
+	rel, err := url.Parse(apiVersion + "/" + path)
 	if err != nil {
 		return nil, err
 	}
@@ -109,30 +160,40 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body inter
 		return nil, err
 	}
 
+	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("nonce", fmt.Sprint(time.Now().UnixNano()))
-	req.Header.Set("public-key", c.publicKey)
 
-	sign, err := c.Sign(req.Header.Get("nonce"), u.String(), body)
-	if err != nil {
+	if err = c.setAuth(req, body); err != nil {
 		return nil, err
-	}
-	req.Header.Set("signature", sign)
-
-	for _, opt := range opts {
-		opt(req)
 	}
 
 	return req, nil
 }
 
+func (c *Client) setAuth(req *http.Request, body any) error {
+	if c.publicKey != "" && c.privateKey != "" {
+		ts := fmt.Sprintf("%d", time.Now().UnixMilli())
+		sign, err := c.sign(ts, req.URL.RequestURI(), body)
+		if err != nil {
+			return err
+		}
+		req.Header.Set(headerNonce, ts)
+		req.Header.Set(headerSignature, sign)
+		req.Header.Set(headerPublicKey, c.publicKey)
+	} else if c.apiKey != "" {
+		req.Header.Set(headerApiKey, c.apiKey)
+	}
+
+	return nil
+}
+
 // Do sends an API request and returns the API response.
 // The JSON response from the API is decoded and saved in the pointed value v.
 // If there is an API error, an error response is returned instead.
-func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
+func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -144,8 +205,7 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 		}
 	}()
 
-	err = CheckResponse(resp)
-	if err != nil {
+	if err = handleErrorResponse(resp); err != nil {
 		return resp, err
 	}
 
@@ -156,20 +216,20 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 	return resp, err
 }
 
-// CheckResponse checks the API response for errors and returns
+// handleErrorResponse checks the API response for errors and returns
 // them if they are found.
-func CheckResponse(r *http.Response) error {
+func handleErrorResponse(r *http.Response) error {
 	if code := r.StatusCode; code >= http.StatusOK && code <= 299 {
 		return nil
 	}
 
-	errorResp := &ErrorResponse{Response: r}
+	errResp := &ErrorResponse{Response: r}
 	data, err := io.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
-		json.Unmarshal(data, errorResp)
+		_ = json.Unmarshal(data, errResp)
 	}
 
-	return errorResp
+	return errResp
 }
 
 // ErrorResponse represents an error response from the KunaPay API.
@@ -194,17 +254,20 @@ func (r *ErrorResponse) Error() string {
 	)
 }
 
-// Sign calculates the signature for the request using HMAC-SHA384 algorithm.
-func (c *Client) Sign(nonce, url string, body interface{}) (string, error) {
-	bodyBytes, err := json.Marshal(body)
-	if err != nil {
-		return "", err
+// sign calculates the signature for the request using HMAC-SHA384 algorithm.
+func (c *Client) sign(nonce, url string, body any) (string, error) {
+	var reqBody = "{}"
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return "", fmt.Errorf("sign calculation: %w", err)
+		}
+		reqBody = string(b)
 	}
-	message := fmt.Sprintf("%s%s%s", url, nonce, string(bodyBytes))
 
 	hash := hmac.New(sha512.New384, []byte(c.privateKey))
-	hash.Write([]byte(message))
-	signature := hex.EncodeToString(hash.Sum(nil))
+	data := []byte(url + nonce + reqBody)
+	hash.Write(data)
 
-	return signature, err
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
