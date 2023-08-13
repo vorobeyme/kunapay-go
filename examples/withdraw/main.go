@@ -27,7 +27,10 @@ func main() {
 	}
 
 	ctx := context.Background()
-	client := kunapay.New(pubKey, privKey, nil)
+	client, err := kunapay.New(pubKey, privKey)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		var method string
@@ -48,7 +51,7 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, method := range w {
-				fmt.Printf("%s: %s\n", method.Code, method.Name)
+				fmt.Printf("%+v\n", method)
 			}
 
 		case "create":
