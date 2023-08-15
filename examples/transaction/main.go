@@ -17,17 +17,8 @@ import (
 )
 
 func main() {
-	pubKey := os.Getenv("KUNAPAY_PUBLIC_KEY")
-	if pubKey == "" {
-		log.Fatal("Public key is not set")
-	}
-	privKey := os.Getenv("KUNAPAY_PRIVATE_KEY")
-	if privKey == "" {
-		log.Fatal("Private key is not set")
-	}
-
 	ctx := context.Background()
-	client, err := kunapay.New(pubKey, privKey)
+	client, err := kunapay.New(os.Getenv("KUNAPAY_PUBLIC_KEY"), os.Getenv("KUNAPAY_PRIVATE_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}

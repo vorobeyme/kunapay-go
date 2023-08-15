@@ -13,22 +13,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/vorobeyme/kunapay-go"
 )
 
 func main() {
-	pubKey := os.Getenv("KUNAPAY_PUBLIC_KEY")
-	if pubKey == "" {
-		log.Fatal("Public key is not set")
-	}
-	privKey := os.Getenv("KUNAPAY_PRIVATE_KEY")
-	if privKey == "" {
-		log.Fatal("Private key is not set")
-	}
-
 	ctx := context.Background()
-	client, err := kunapay.New(pubKey, privKey)
+	client, err := kunapay.New(os.Getenv("KUNAPAY_PUBLIC_KEY"), os.Getenv("KUNAPAY_PRIVATE_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,10 +36,19 @@ func main() {
 		switch method {
 		case "create":
 			fmt.Println("Creating invoice...")
+
+			var amount string
+			fmt.Print("Enter amount: ")
+			fmt.Scanf("%s", &amount)
+
+			var currency string
+			fmt.Print("Enter currency (UAH, EUR, USDT): ")
+			fmt.Scanf("%s", &currency)
+
 			i, _, err := client.Invoice.Create(ctx, &kunapay.CreateInvoiceRequest{
-				Amount:             "1.00",
-				Asset:              "USDT",
-				ExternalOrderID:    "1234567890",
+				Amount:             amount,
+				Asset:              currency,
+				ExternalOrderID:    fmt.Sprintf("test-%d", time.Now().Unix()),
 				ProductDescription: "Test invoice",
 				ProductCategory:    "Test",
 				CallbackUrl:        "https://example.com/callback",
@@ -55,7 +56,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("%+v\n", i)
+			fmt.Printf("Invoice %s created. Payment link: %s\n", i.ID, i.PaymentLink)
 
 		case "list":
 			fmt.Println("Getting invoices...")
@@ -64,9 +65,8 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, invoice := range i {
-				fmt.Printf(`ID: %s\n AddresID: %s\n ExternalOrderID: %s\n PaymentAmount: %s\n 
-					InvoiceAmount: %s\n InvoiceAssetCode: %s\n PaymentAssetCode: %s\n
-					ExpireAt: %s\n CompletedAt: %s\n CreatedAt: %s\n`,
+				fmt.Printf("ID: %s\nAddresID: %s\nExternalOrderID: %s\nPaymentAmount: %s\nInvoiceAmount: %s\nInvoiceAssetCode: %s"+
+					"\nPaymentAssetCode: %s\nExpireAt: %s\nCompletedAt: %s\nCreatedAt: %s\n\n",
 					invoice.ID, invoice.AddressID, invoice.ExternalOrderID, invoice.PaymentAmount,
 					invoice.InvoiceAmount, invoice.InvoiceAssetCode, invoice.PaymentAssetCode,
 					invoice.ExpireAt, invoice.CompletedAt, invoice.CreatedAt,
@@ -77,12 +77,18 @@ func main() {
 			var ID string
 			fmt.Print("Enter invoice ID: ")
 			fmt.Scanf("%s", &ID)
-			fmt.Printf("Getting invoice %s...\n", ID)
+			fmt.Printf("Getting invoice %s...\n\n", ID)
 			t, _, err := client.Invoice.Get(ctx, ID)
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("%+v\n", t)
+			fmt.Printf("ID: %s\nStatus: %s\nExternalOrderID: %s\nAddressID: %s\nCreatorID: %s\nInvoiceAmount: %s\nPaymentAmount: %s"+
+				"\nInvoiceAssetCode: %s\nPaymentAssetCode: %s\nProductCategory: %s\nProductDescription: %s"+
+				"\nIsCreatedByAPI: %t\nExpireAt: %s\nCompletedAt: %s\nCreatedAt: %s\nUpdatedAt: %s\nTransactions: %v\n",
+				t.ID, t.Status, t.ExternalOrderID, t.AddressID, t.CreatorID, t.InvoiceAmount,
+				t.PaymentAmount, t.InvoiceAssetCode, t.PaymentAssetCode, t.ProductCategory,
+				t.ProductDescription, t.IsCreatedByAPI, t.ExpireAt, t.CompletedAt, t.CreatedAt, t.UpdateAt, t.Transactions,
+			)
 
 		case "currencies":
 			fmt.Println("Getting currencies...")
@@ -91,7 +97,9 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, currency := range c {
-				fmt.Printf("%s: %s\n", currency.Code, currency.Name)
+				fmt.Printf("Code: %s\nName: %s\nDescription: %s\nPosition: %d\nPrecision: %d\nType: %s\nSVG icon: %s\nPNG icon: %s\n\n",
+					currency.Code, currency.Name, currency.Description, currency.Position, currency.Precision, currency.Type,
+					currency.Icons.SVG, currency.Icons.PNG)
 			}
 
 		default:
