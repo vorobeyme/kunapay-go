@@ -21,7 +21,8 @@ go get github.com/vorobeyme/kunapay-go
 import "github.com/vorobeyme/kunapay-go"
 ```
 
-To begin, create a new KunaPay client, then use the available services to interact with various sections of the KunaPay API.  
+To begin, create a new KunaPay client, then use the available services to interact with various sections of the KunaPay API.
+
 For example, to get the balance of the assets:
 ```go
 package main

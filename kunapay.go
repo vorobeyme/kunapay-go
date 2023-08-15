@@ -16,7 +16,7 @@ import (
 
 const (
 	// libVersion is the current version of the library.
-	libVersion = "0.0.1"
+	libVersion = "0.1.0"
 
 	apiURL     = "https://api-kunapayapp.kuna.io/"
 	apiVersion = "v1"

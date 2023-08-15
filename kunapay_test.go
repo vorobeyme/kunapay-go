@@ -15,7 +15,7 @@ import (
 func setupClient() (client *Client, mux *http.ServeMux, teardown func()) {
 	mux = http.NewServeMux()
 	server := httptest.NewServer(mux)
-	client, _ = NewWithAPIKey("API_key")
+	client, _ = New("public_key", "private_key")
 	url, _ := url.Parse(server.URL)
 	client.baseURL = url
 
@@ -83,7 +83,7 @@ func testJSONMarshal(t *testing.T, v interface{}, want string) {
 	}
 }
 
-func TestNewClientWithSignture(t *testing.T) {
+func TestNewClientWithSignature(t *testing.T) {
 	pubKey := "public_key"
 	privKey := "private_key"
 
@@ -99,6 +99,19 @@ func TestNewClientWithSignture(t *testing.T) {
 	}
 	if c.baseURL.String() != apiURL {
 		t.Errorf("Client baseURL is %v, want %v", c.baseURL.String(), apiURL)
+	}
+}
+
+func TestNewClientWithAPIKeyAndOptions(t *testing.T) {
+	apiKey := "api_key"
+	ua := "test/0.0.1"
+
+	c, _ := NewWithAPIKey(apiKey, WithHTTPClient(&http.Client{}), SetUserAgent(ua))
+	if c.apiKey != apiKey {
+		t.Errorf("Client API key is %v, want %v", c.apiKey, apiKey)
+	}
+	if c.userAgent != ua {
+		t.Errorf("Client userAgent is %v, want %v", c.userAgent, ua)
 	}
 }
 
