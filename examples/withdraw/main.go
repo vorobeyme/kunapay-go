@@ -17,17 +17,8 @@ import (
 )
 
 func main() {
-	pubKey := os.Getenv("KUNAPAY_PUBLIC_KEY")
-	if pubKey == "" {
-		log.Fatal("Public key is not set")
-	}
-	privKey := os.Getenv("KUNAPAY_PRIVATE_KEY")
-	if privKey == "" {
-		log.Fatal("Private key is not set")
-	}
-
 	ctx := context.Background()
-	client, err := kunapay.New(pubKey, privKey)
+	client, err := kunapay.New(os.Getenv("KUNAPAY_PUBLIC_KEY"), os.Getenv("KUNAPAY_PRIVATE_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +42,14 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, method := range w {
-				fmt.Printf("%+v\n", method)
+				var fields []string
+				for _, field := range method.Fields {
+					fields = append(fields, fmt.Sprintf("\n\tName: %s \n\tLabel: %s \n\tDescription: %s \n\tPosition: %d \n\tType: %s"+
+						"\n\tIsRequired: %t \n\tIsMasked: %t \n\tIsResultField: %t\n",
+						field.Name, field.Label, field.Description, field.Position, field.Type, field.IsRequired, field.IsMasked, field.IsResultField))
+				}
+				fmt.Printf("Code: %s \nAsset: %s \nNetwork: %s \nPosition: %d, \nName: %s \nIcon: %s \nDescription: %s \nCustomTitle: %s \nFields: %+v\n\n",
+					method.Code, method.Asset, method.Network, method.Position, method.Name, method.Icon, method.Description, method.CustomTitle, fields)
 			}
 
 		case "create":

@@ -17,16 +17,7 @@ import (
 )
 
 func main() {
-	pubKey := os.Getenv("KUNAPAY_PUBLIC_KEY")
-	if pubKey == "" {
-		log.Fatal("Public key is not set")
-	}
-	privKey := os.Getenv("KUNAPAY_PRIVATE_KEY")
-	if privKey == "" {
-		log.Fatal("Private key is not set")
-	}
-
-	client, err := kunapay.New(pubKey, privKey)
+	client, err := kunapay.New(os.Getenv("KUNAPAY_PUBLIC_KEY"), os.Getenv("KUNAPAY_PRIVATE_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +38,7 @@ func main() {
 				log.Fatal(err)
 			}
 			for _, asset := range b {
-				fmt.Printf("Balance: %s\nLockBalance: %s\nCode: %s\nName: %s\nSVG: %s\nPNG: %s\n\n",
+				fmt.Printf("Balance: %s\nLockBalance: %s\nCode: %s\nName: %s\nSVG icon: %s\nPNG icon: %s\n\n",
 					asset.Balance, asset.LockBalance, asset.Code, asset.Name, asset.Icons.SVG, asset.Icons.PNG)
 			}
 		default:
