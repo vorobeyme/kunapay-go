@@ -99,7 +99,7 @@ type CreateInvoiceRequest struct {
 	ExternalOrderID    string `json:"externalOrderId,omitempty"`
 	ProductDescription string `json:"productDescription,omitempty"`
 	ProductCategory    string `json:"productCategory,omitempty"`
-	CallbackUrl        string `json:"callbackUrl,omitempty"`
+	CallbackURL        string `json:"callbackUrl,omitempty"`
 }
 
 // validate checks if the request values are valid.
@@ -230,14 +230,14 @@ func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*In
 }
 
 // Get returns detailed information on a single crypto invoice.
-// The invoice identifier is passed in the ID parameter.
+// The invoice identifier is passed in the id parameter.
 //
 // API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoicebyid
-func (s *InvoiceService) Get(ctx context.Context, ID string) (*InvoiceDetail, *http.Response, error) {
-	if ID == "" {
+func (s *InvoiceService) Get(ctx context.Context, id string) (*InvoiceDetail, *http.Response, error) {
+	if id == "" {
 		return nil, nil, fmt.Errorf("invoice ID is required")
 	}
-	u := fmt.Sprintf("invoice/%s", ID)
+	u := fmt.Sprintf("invoice/%s", id)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err

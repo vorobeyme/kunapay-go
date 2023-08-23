@@ -81,7 +81,7 @@ func (o *TransactionListOpts) values() url.Values {
 }
 
 // List returns information on all invoices and withdrawal operations.
-// 
+//
 // API docs: https://docs-pay.kuna.io/reference/transactioncontroller_gettransactions
 func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts) ([]*Transaction, *http.Response, error) {
 	u := "transaction"
@@ -107,14 +107,14 @@ func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts
 }
 
 // Get returns detailed information on a single transaction.
-// The transaction identifier is passed in the ID parameter.
+// The transaction identifier is passed in the id parameter.
 //
 // API docs: https://docs-pay.kuna.io/reference/transactioncontroller_gettransactionbyid
-func (s *TransactionService) Get(ctx context.Context, ID string) (*Transaction, *http.Response, error) {
-	if ID == "" {
+func (s *TransactionService) Get(ctx context.Context, id string) (*Transaction, *http.Response, error) {
+	if id == "" {
 		return nil, nil, fmt.Errorf("transaction ID is required")
 	}
-	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction/"+ID, http.NoBody)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction/"+id, http.NoBody)
 	if err != nil {
 		return nil, nil, err
 	}

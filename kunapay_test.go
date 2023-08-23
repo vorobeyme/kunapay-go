@@ -3,6 +3,7 @@ package kunapay
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,7 @@ import (
 func setupClient() (client *Client, mux *http.ServeMux, teardown func()) {
 	mux = http.NewServeMux()
 	server := httptest.NewServer(mux)
+
 	client, _ = New("public_key", "private_key")
 	url, _ := url.Parse(server.URL)
 	client.baseURL = url
@@ -91,8 +93,8 @@ func TestNewClientWithSignature(t *testing.T) {
 	if c.publicKey != pubKey {
 		t.Errorf("Client publicKey is %v, want %v", c.publicKey, pubKey)
 	}
-	if c.privateKey != privKey {
-		t.Errorf("Client privateKey is %v, want %v", c.privateKey, privKey)
+	if string(c.privateKey) != privKey {
+		t.Errorf("Client privateKey is %v, want %v", string(c.privateKey), privKey)
 	}
 	if c.userAgent != userAgent {
 		t.Errorf("Client userAgent is %v, want %v", c.userAgent, userAgent)
@@ -132,11 +134,10 @@ func TestDo_redirectLoop(t *testing.T) {
 }
 
 func TestCheckResponse(t *testing.T) {
-
 	tests := []struct {
 		title    string
 		input    *http.Response
-		expected *ErrorResponse
+		expected *ResponseError
 	}{
 		{
 			title: "400 Bad Request",
@@ -150,7 +151,7 @@ func TestCheckResponse(t *testing.T) {
 					}]
 				}`)),
 			},
-			expected: &ErrorResponse{
+			expected: &ResponseError{
 				Response: &http.Response{},
 				Errors: []Error{
 					{
@@ -167,19 +168,19 @@ func TestCheckResponse(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 				Body:       io.NopCloser(strings.NewReader("")),
 			},
-			expected: &ErrorResponse{},
+			expected: &ResponseError{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.title, func(t *testing.T) {
-			err := handleErrorResponse(test.input).(*ErrorResponse)
+			err := handleErrorResponse(test.input)
 			if err == nil {
 				t.Errorf("Expected error response.")
 			}
 			test.expected.Response = test.input
 
-			if !reflect.DeepEqual(err, test.expected) {
+			if !errors.As(err, &test.expected) {
 				t.Errorf("Error = %#v, want %#v", err, test.expected)
 			}
 		})
@@ -190,7 +191,7 @@ func TestErrorResponse_Error(t *testing.T) {
 	res := &http.Response{
 		Request: &http.Request{},
 	}
-	err := ErrorResponse{
+	err := ResponseError{
 		Response: res,
 		Errors: []Error{
 			{

@@ -46,7 +46,7 @@ type CreateWithdrawRequest struct {
 	Fields        map[string]string `json:"fields,omitempty"`
 	Comment       string            `json:"comment,omitempty"`
 	WithdrawAll   bool              `json:"withdrawAll,omitempty"`
-	CallbackUrl   string            `json:"callbackUrl,omitempty"`
+	CallbackURL   string            `json:"callbackUrl,omitempty"`
 }
 
 // validate checks if request values are valid.
