@@ -51,7 +51,7 @@ func main() {
 				ExternalOrderID:    fmt.Sprintf("test-%d", time.Now().Unix()),
 				ProductDescription: "Test invoice",
 				ProductCategory:    "Test",
-				CallbackUrl:        "https://example.com/callback",
+				CallbackURL:        "https://example.com/callback",
 			})
 			if err != nil {
 				log.Fatal(err)

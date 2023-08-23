@@ -73,16 +73,16 @@ func TestInvoiceService_CreateWithAllParams(t *testing.T) {
 		}`)
 	})
 
-	externalorderId := "c94c0c95-e735-45ea-982e-111111111111"
-	callbackUrl := "https://example.com/callback"
+	externalOrderID := "c94c0c95-e735-45ea-982e-111111111111"
+	callbackURL := "https://example.com/callback"
 
 	invoice, _, err := client.Invoice.Create(context.Background(), &CreateInvoiceRequest{
 		Amount:             "100.011",
 		Asset:              "USDT",
-		ExternalOrderID:    externalorderId,
+		ExternalOrderID:    externalOrderID,
 		ProductDescription: "Product description",
 		ProductCategory:    "Product category",
-		CallbackUrl:        callbackUrl,
+		CallbackURL:        callbackURL,
 	})
 	if err != nil {
 		t.Errorf("Invoice.Create returned error: %v", err)
@@ -102,11 +102,12 @@ func TestInvoiceService_CreateWithRequestValidationErr(t *testing.T) {
 	client, _, teardown := setupClient()
 	defer teardown()
 
-	_, _, amountErr := client.Invoice.Create(context.Background(), &CreateInvoiceRequest{})
+	ctx := context.Background()
+	_, _, amountErr := client.Invoice.Create(ctx, &CreateInvoiceRequest{})
 	if amountErr != nil && amountErr.Error() != "amount is required" {
 		t.Errorf("Invoice.Create returned error: %v", amountErr)
 	}
-	_, _, assetErr := client.Invoice.Create(context.Background(), &CreateInvoiceRequest{Amount: "100.00"})
+	_, _, assetErr := client.Invoice.Create(ctx, &CreateInvoiceRequest{Amount: "100.00"})
 	if amountErr != nil && assetErr.Error() != "asset code is required" {
 		t.Errorf("Invoice.Create returned error: %v", assetErr)
 	}

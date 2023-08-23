@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	// libVersion is the current version of the library.
 	libVersion = "0.1.0"
 
 	apiURL     = "https://api-kunapayapp.kuna.io/"
@@ -26,7 +25,7 @@ const (
 	headerNonce     = "nonce"
 	headerSignature = "signature"
 	headerPublicKey = "public-key"
-	headerApiKey    = "api-key"
+	headerAPIKey    = "api-key"
 )
 
 // Client manages communication with the KunaPay API.
@@ -37,17 +36,17 @@ type Client struct {
 	// API key used to make authenticated API calls.
 	apiKey string
 
-	// Private key used to make authenticated API calls.
-	privateKey string
-
 	// Public key used to make authenticated API calls.
 	publicKey string
+
+	// Private key used to make authenticated API calls.
+	privateKey []byte
 
 	// User agent used when communicating with the API.
 	userAgent string
 
 	// HTTP client used to communicate with the API.
-	client *http.Client
+	httpClient *http.Client
 
 	// Services used for talking to different parts of the KunaPay API.
 	Asset       *AssetService
@@ -69,7 +68,7 @@ func New(publicKey, privateKey string, opts ...ClientOptions) (*Client, error) {
 	}
 
 	client.publicKey = publicKey
-	client.privateKey = privateKey
+	client.privateKey = []byte(privateKey)
 
 	return client, err
 }
@@ -112,8 +111,8 @@ func newClient(opts ...ClientOptions) (*Client, error) {
 		}
 	}
 
-	if client.client == nil {
-		client.client = http.DefaultClient
+	if client.httpClient == nil {
+		client.httpClient = http.DefaultClient
 	}
 
 	return client, nil
@@ -122,7 +121,7 @@ func newClient(opts ...ClientOptions) (*Client, error) {
 // WithHTTPClient sets the owning http.Client to use for API requests.
 func WithHTTPClient(client *http.Client) ClientOptions {
 	return func(c *Client) error {
-		c.client = client
+		c.httpClient = client
 		return nil
 	}
 }
@@ -174,7 +173,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body any) 
 }
 
 func (c *Client) setAuth(req *http.Request, body any) error {
-	if c.publicKey != "" && c.privateKey != "" {
+	if c.publicKey != "" && c.privateKey != nil {
 		ts := fmt.Sprintf("%d", time.Now().UnixMilli())
 		sign, err := c.sign(ts, req.URL.RequestURI(), body)
 		if err != nil {
@@ -184,7 +183,7 @@ func (c *Client) setAuth(req *http.Request, body any) error {
 		req.Header.Set(headerSignature, sign)
 		req.Header.Set(headerPublicKey, c.publicKey)
 	} else if c.apiKey != "" {
-		req.Header.Set(headerApiKey, c.apiKey)
+		req.Header.Set(headerAPIKey, c.apiKey)
 	}
 
 	return nil
@@ -194,7 +193,7 @@ func (c *Client) setAuth(req *http.Request, body any) error {
 // The JSON response from the API is decoded and saved in the pointed value v.
 // If there is an API error, an error response is returned instead.
 func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
-	resp, err := c.client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -223,17 +222,23 @@ func handleErrorResponse(r *http.Response) error {
 		return nil
 	}
 
-	errResp := &ErrorResponse{Response: r}
+	errResp := &ResponseError{Response: r}
 	data, err := io.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
-		_ = json.Unmarshal(data, errResp)
+		err = json.Unmarshal(data, errResp)
+		if err != nil {
+			errResp.Errors = append(errResp.Errors, Error{
+				Code:    "",
+				Message: string(data),
+			})
+		}
 	}
 
 	return errResp
 }
 
-// ErrorResponse represents an error response from the KunaPay API.
-type ErrorResponse struct {
+// ResponseError represents an error response from the KunaPay API.
+type ResponseError struct {
 	// HTTP response that caused this error.
 	Response *http.Response `json:"-"`
 
@@ -247,7 +252,7 @@ type Error struct {
 }
 
 // Error returns the string representation of the error.
-func (r *ErrorResponse) Error() string {
+func (r *ResponseError) Error() string {
 	return fmt.Sprintf("%v %v: %d %+v",
 		r.Response.Request.Method, r.Response.Request.URL,
 		r.Response.StatusCode, r.Errors,
@@ -265,7 +270,7 @@ func (c *Client) sign(nonce, url string, body any) (string, error) {
 		reqBody = string(b)
 	}
 
-	hash := hmac.New(sha512.New384, []byte(c.privateKey))
+	hash := hmac.New(sha512.New384, c.privateKey)
 	data := []byte(url + nonce + reqBody)
 	hash.Write(data)
 

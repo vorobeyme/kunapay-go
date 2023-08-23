@@ -28,8 +28,6 @@ func TestAssetService_GetBalance(t *testing.T) {
 	client, mux, teardown := setupClient()
 	defer teardown()
 
-	expectedAssets := []*Asset{assetMock(), assetMock()}
-
 	mux.HandleFunc("/v1/asset/balance", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		testURL(t, r, "/v1/asset/balance?assetCodes=USDT,BTC")
@@ -64,8 +62,9 @@ func TestAssetService_GetBalance(t *testing.T) {
 		t.Errorf("Asset.GetBalance returned error: %v", err)
 	}
 
-	if !reflect.DeepEqual(assets, expectedAssets) {
-		t.Errorf("Asset.GetBalance returned %+v, expected %+v", assets, expectedAssets)
+	want := []*Asset{assetMock(), assetMock()}
+	if !reflect.DeepEqual(assets, want) {
+		t.Errorf("Asset.GetBalance returned %+v, expected %+v", assets, want)
 	}
 }
 
