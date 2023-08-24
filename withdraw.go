@@ -51,13 +51,13 @@ type CreateWithdrawRequest struct {
 
 // validate checks if request values are valid.
 func (r *CreateWithdrawRequest) validate() error {
-	if r.Amount == "" {
+	if strings.TrimSpace(r.Amount) == "" {
 		return fmt.Errorf("amount is required")
 	}
-	if r.Asset == "" {
+	if strings.TrimSpace(r.Asset) == "" {
 		return fmt.Errorf("asset code is required")
 	}
-	if r.PaymentMethod == "" {
+	if strings.TrimSpace(r.PaymentMethod) == "" {
 		return fmt.Errorf("payment method is required")
 	}
 
@@ -73,7 +73,7 @@ type CreateWithdrawResponse struct {
 // Create create withdraw in crypto to any specified address.
 //
 // API docs: https://docs-pay.kuna.io/reference/withdrawcontroller_makewithdraw
-func (s *WithdrawService) Create(ctx context.Context, request *CreateWithdrawRequest) (*CreateWithdrawResponse, *http.Response, error) {
+func (s *WithdrawService) Create(ctx context.Context, request *CreateWithdrawRequest) (*CreateWithdrawResponse, *Response, error) {
 	if err := request.validate(); err != nil {
 		return nil, nil, err
 	}
@@ -94,11 +94,11 @@ func (s *WithdrawService) Create(ctx context.Context, request *CreateWithdrawReq
 	return root.Data, resp, err
 }
 
-// GetMethods returns information on available withdraw methods.
+// GetMethods returns information on available withdrawal methods.
 //
 // API docs: https://docs-pay.kuna.io/reference/withdrawcontroller_prerequestwithdraw
-func (s *WithdrawService) GetMethods(ctx context.Context, asset string) ([]*Withdraw, *http.Response, error) {
-	if asset == "" {
+func (s *WithdrawService) GetMethods(ctx context.Context, asset string) ([]*Withdraw, *Response, error) {
+	if strings.TrimSpace(asset) == "" {
 		return nil, nil, fmt.Errorf("asset code is required")
 	}
 	u := fmt.Sprintf("withdraw/pre-request?asset=%s", strings.ToUpper(asset))

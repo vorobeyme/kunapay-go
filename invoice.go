@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -104,12 +105,13 @@ type CreateInvoiceRequest struct {
 
 // validate checks if the request values are valid.
 func (r *CreateInvoiceRequest) validate() error {
-	if r.Amount == "" {
+	if strings.TrimSpace(r.Amount) == "" {
 		return fmt.Errorf("amount is required")
 	}
-	if r.Asset == "" {
+	if strings.TrimSpace(r.Asset) == "" {
 		return fmt.Errorf("asset code is required")
 	}
+
 	return nil
 }
 
@@ -121,7 +123,7 @@ type CreateInvoiceResponse struct {
 // Create creates invoice for a client for a specified amount.
 //
 // API docs: https://docs-pay.kuna.io/reference/invoicecontroller_createinvoice
-func (s *InvoiceService) Create(ctx context.Context, request *CreateInvoiceRequest) (*CreateInvoiceResponse, *http.Response, error) {
+func (s *InvoiceService) Create(ctx context.Context, request *CreateInvoiceRequest) (*CreateInvoiceResponse, *Response, error) {
 	if err := request.validate(); err != nil {
 		return nil, nil, err
 	}
@@ -145,11 +147,11 @@ func (s *InvoiceService) Create(ctx context.Context, request *CreateInvoiceReque
 type InvoiceOrderBy string
 
 const (
-	OrderByCreatedAt        InvoiceOrderBy = "createdAt"
-	OrderByCompletedAt      InvoiceOrderBy = "completedAt"
-	OrderByInvoiceAssetCode InvoiceOrderBy = "invoiceAssetCode"
-	OrderByPaymentAssetCode InvoiceOrderBy = "paymentAssetCode"
-	OrderByStatus           InvoiceOrderBy = "status"
+	InvoiceOrderByCreatedAt        InvoiceOrderBy = "createdAt"
+	InvoiceOrderByCompletedAt      InvoiceOrderBy = "completedAt"
+	InvoiceOrderByInvoiceAssetCode InvoiceOrderBy = "invoiceAssetCode"
+	InvoiceOrderByPaymentAssetCode InvoiceOrderBy = "paymentAssetCode"
+	InvoiceOrderByStatus           InvoiceOrderBy = "status"
 )
 
 // InvoiceListOpts specifies the optional parameters to the
@@ -188,13 +190,13 @@ func (o *InvoiceListOpts) values() url.Values {
 	if o.CompletedTo != nil {
 		v.Add("completedTo", o.CompletedTo.Format(time.RFC3339))
 	}
-	if o.ExternalOrderID != "" {
+	if strings.TrimSpace(o.ExternalOrderID) != "" {
 		v.Add("externalOrderId", o.ExternalOrderID)
 	}
-	if o.InvoiceAssetCode != "" {
+	if strings.TrimSpace(o.InvoiceAssetCode) != "" {
 		v.Add("invoiceAssetCode", o.InvoiceAssetCode)
 	}
-	if o.PaymentAssetCode != "" {
+	if strings.TrimSpace(o.PaymentAssetCode) != "" {
 		v.Add("paymentAssetCode", o.PaymentAssetCode)
 	}
 	if o.OrderBy != "" {
@@ -207,7 +209,7 @@ func (o *InvoiceListOpts) values() url.Values {
 // List returns crypto invoices list.
 //
 // API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoices
-func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*Invoice, *http.Response, error) {
+func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*Invoice, *Response, error) {
 	u := "invoice"
 	if opts != nil {
 		u += "?" + opts.values().Encode()
@@ -233,8 +235,8 @@ func (s *InvoiceService) List(ctx context.Context, opts *InvoiceListOpts) ([]*In
 // The invoice identifier is passed in the id parameter.
 //
 // API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoicebyid
-func (s *InvoiceService) Get(ctx context.Context, id string) (*InvoiceDetail, *http.Response, error) {
-	if id == "" {
+func (s *InvoiceService) Get(ctx context.Context, id string) (*InvoiceDetail, *Response, error) {
+	if strings.TrimSpace(id) == "" {
 		return nil, nil, fmt.Errorf("invoice ID is required")
 	}
 	u := fmt.Sprintf("invoice/%s", id)
@@ -278,7 +280,7 @@ func (o *InvoiceCurrencyListOpts) values() url.Values {
 // GetCurrencies returns information on available crypto currencies for invoice creation.
 //
 // API docs: https://docs-pay.kuna.io/reference/invoicecontroller_getinvoiceassets
-func (s *InvoiceService) GetCurrencies(ctx context.Context, opts *InvoiceCurrencyListOpts) ([]*InvoiceCurrency, *http.Response, error) {
+func (s *InvoiceService) GetCurrencies(ctx context.Context, opts *InvoiceCurrencyListOpts) ([]*InvoiceCurrency, *Response, error) {
 	u := "invoice/assets"
 	if opts != nil {
 		u += "?" + opts.values().Encode()

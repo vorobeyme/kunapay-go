@@ -11,13 +11,14 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
 const (
 	libVersion = "0.1.0"
 
-	apiURL     = "https://api-kunapayapp.kuna.io/"
+	apiURL     = "https://api.dashboard.kuna.io/"
 	apiVersion = "v1"
 
 	userAgent = "kunapay-go/" + libVersion
@@ -58,7 +59,7 @@ type Client struct {
 // New returns a new KunaPay API client that uses signature authentication
 // with the provided public and private keys.
 func New(publicKey, privateKey string, opts ...ClientOptions) (*Client, error) {
-	if publicKey == "" || privateKey == "" {
+	if strings.TrimSpace(publicKey) == "" || strings.TrimSpace(privateKey) == "" {
 		return nil, fmt.Errorf("public and private keys are required")
 	}
 
@@ -75,7 +76,7 @@ func New(publicKey, privateKey string, opts ...ClientOptions) (*Client, error) {
 
 // NewWithAPIKey returns a new KunaPay API client using the provided API key.
 func NewWithAPIKey(apiKey string, opts ...ClientOptions) (*Client, error) {
-	if apiKey == "" {
+	if strings.TrimSpace(apiKey) == "" {
 		return nil, fmt.Errorf("api key is required")
 	}
 
@@ -130,6 +131,18 @@ func WithHTTPClient(client *http.Client) ClientOptions {
 func SetUserAgent(userAgent string) ClientOptions {
 	return func(c *Client) error {
 		c.userAgent = userAgent
+		return nil
+	}
+}
+
+// SetBaseURL sets the base URL for API requests.
+func SetBaseURL(apiURL string) ClientOptions {
+	return func(c *Client) error {
+		baseURL, err := url.Parse(apiURL)
+		if err != nil {
+			return err
+		}
+		c.baseURL = baseURL
 		return nil
 	}
 }
@@ -192,7 +205,7 @@ func (c *Client) setAuth(req *http.Request, body any) error {
 // Do sends an API request and returns the API response.
 // The JSON response from the API is decoded and saved in the pointed value v.
 // If there is an API error, an error response is returned instead.
-func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
+func (c *Client) Do(req *http.Request, v any) (*Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -204,15 +217,23 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 		}
 	}()
 
+	response := &Response{Response: resp}
+
 	if err = handleErrorResponse(resp); err != nil {
-		return resp, err
+		return response, err
 	}
 
 	if v != nil {
 		err = json.NewDecoder(resp.Body).Decode(v)
 	}
 
-	return resp, err
+	return response, err
+}
+
+// Response is a KunaPay API response.
+// This wraps the standard http.Response
+type Response struct {
+	*http.Response
 }
 
 // handleErrorResponse checks the API response for errors and returns

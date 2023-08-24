@@ -1,0 +1,39 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs-use-default: true
+  modules-download-mode: readonly
+
+linters:
+  #disable-all: true
+  enable:
+    - bodyclose
+    - contextcheck
+    - gofmt
+    - errname
+    - errcheck
+    - errorlint
+    - gocritic
+    - godot
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - revive
+    - staticcheck
+    - typecheck
+    - unused
+    - nilerr
+    - tparallel
+    - unparam
+    - whitespace
+    - bidichk
+    - exportloopref
+    - goconst
+    - reassign
+    - goimports
+
+output:
+  format: colored-line-number

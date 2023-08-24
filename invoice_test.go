@@ -43,7 +43,8 @@ func TestInvoiceService_CreateWithRequiredParams(t *testing.T) {
 		}`)
 	})
 
-	invoice, _, err := client.Invoice.Create(context.Background(), &CreateInvoiceRequest{Amount: "100.11", Asset: "USDT"})
+	ctx := context.Background()
+	invoice, _, err := client.Invoice.Create(ctx, &CreateInvoiceRequest{Amount: "100.11", Asset: "USDT"})
 	if err != nil {
 		t.Errorf("Invoice.Create returned error: %v", err)
 	}
@@ -56,6 +57,15 @@ func TestInvoiceService_CreateWithRequiredParams(t *testing.T) {
 	if !reflect.DeepEqual(invoice, want) {
 		t.Errorf("Invoice.Create returned %+v, want %+v", invoice, want)
 	}
+
+	const method = "Invoice.Create"
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Invoice.Create(ctx, &CreateInvoiceRequest{Amount: "100.11", Asset: "USDT"})
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
+	})
 }
 
 func TestInvoiceService_CreateWithAllParams(t *testing.T) {
@@ -139,16 +149,25 @@ func TestInvoiceService_List(t *testing.T) {
 		}`)
 	})
 
-	invoice, _, err := client.Invoice.List(context.Background(), nil)
+	ctx := context.Background()
+	invoice, _, err := client.Invoice.List(ctx, nil)
 	if err != nil {
 		t.Errorf("Invoice.List returned error: %v", err)
 	}
 
 	want := []*Invoice{invoiceMock()}
-
 	if !reflect.DeepEqual(invoice, want) {
 		t.Errorf("Invoice.List returned %+v, want %+v", invoice, want)
 	}
+
+	const method = "Invoice.List"
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Invoice.List(ctx, nil)
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
+	})
 }
 
 func TestInvoiceService_ListWithQueryParams(t *testing.T) {
@@ -203,7 +222,7 @@ func TestInvoiceService_ListWithQueryParams(t *testing.T) {
 		ExternalOrderID:  "c94c0c95-e735-45ea-982e-111111111111",
 		InvoiceAssetCode: "UAH",
 		PaymentAssetCode: "USDT",
-		OrderBy:          "createdAt",
+		OrderBy:          InvoiceOrderByCreatedAt,
 	}
 	invoice, _, err := client.Invoice.List(context.Background(), invoiceListOpts)
 	if err != nil {
@@ -211,7 +230,6 @@ func TestInvoiceService_ListWithQueryParams(t *testing.T) {
 	}
 
 	want := []*Invoice{invoiceMock()}
-
 	if !reflect.DeepEqual(invoice, want) {
 		t.Errorf("Invoice.List returned %+v, want %+v", invoice, want)
 	}
@@ -265,7 +283,8 @@ func TestInvoiceService_Get(t *testing.T) {
 		}`)
 	})
 
-	invoice, _, err := client.Invoice.Get(context.Background(), "c94c0c95-e735-45ea-982e-a95f7f52ca49")
+	ctx := context.Background()
+	invoice, _, err := client.Invoice.Get(ctx, "c94c0c95-e735-45ea-982e-a95f7f52ca49")
 	if err != nil {
 		t.Errorf("Invoice.Get returned error: %v", err)
 	}
@@ -310,9 +329,18 @@ func TestInvoiceService_Get(t *testing.T) {
 		t.Errorf("Invoice.Get returned %+v, want %+v", invoice, want)
 	}
 
-	testBadPathParams(t, "Invoice.Get", func() error {
-		_, _, err = client.Invoice.Get(context.Background(), "")
+	const method = "Invoice.Get"
+	testBadPathParams(t, method, func() error {
+		_, _, err = client.Invoice.Get(ctx, "\n")
 		return err
+	})
+
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Invoice.Get(ctx, "c94c0c95-e735-45ea-982e-a95f7f52ca49")
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
 	})
 }
 
@@ -341,11 +369,12 @@ func TestInvoiceService_GetCurrencies(t *testing.T) {
 		}`)
 	})
 
+	ctx := context.Background()
 	invoiceCurrencyListOpts := &InvoiceCurrencyListOpts{
 		Take: 10,
 		Skip: 10,
 	}
-	assets, _, err := client.Invoice.GetCurrencies(context.Background(), invoiceCurrencyListOpts)
+	assets, _, err := client.Invoice.GetCurrencies(ctx, invoiceCurrencyListOpts)
 	if err != nil {
 		t.Errorf("Invoice.GetCurrencies returned error: %v", err)
 	}
@@ -370,6 +399,15 @@ func TestInvoiceService_GetCurrencies(t *testing.T) {
 	if !reflect.DeepEqual(assets, want) {
 		t.Errorf("Invoice.GetCurrencies returned %+v, want %+v", assets, want)
 	}
+
+	const method = "Invoice.GetCurrencies"
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Invoice.GetCurrencies(ctx, nil)
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
+	})
 }
 
 func invoiceMock() *Invoice {

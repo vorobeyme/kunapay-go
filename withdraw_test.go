@@ -71,20 +71,29 @@ func TestWithdrawService_GetMethods(t *testing.T) {
 		}`)
 	})
 
-	withdraw, _, err := client.Withdraw.GetMethods(context.Background(), "USDT")
+	ctx := context.Background()
+	withdraw, _, err := client.Withdraw.GetMethods(ctx, "USDT")
 	if err != nil {
 		t.Errorf("Withdraw.GetMethods returned error: %v", err)
 	}
 
 	want := []*Withdraw{withdrawMock()}
-
 	if !reflect.DeepEqual(withdraw, want) {
 		t.Errorf("Withdraw.GetMethods returned %+v, want %+v", withdraw, want)
 	}
 
-	testBadPathParams(t, "Withdraw.GetMethods", func() error {
-		_, _, err = client.Withdraw.GetMethods(context.Background(), "")
+	const method = "Withdraw.GetMethods"
+	testBadPathParams(t, method, func() error {
+		_, _, err = client.Withdraw.GetMethods(ctx, "\n")
 		return err
+	})
+
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Withdraw.GetMethods(ctx, "btc")
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
 	})
 }
 
@@ -102,12 +111,13 @@ func TestWithdrawService_Create(t *testing.T) {
 		}`)
 	})
 
+	ctx := context.Background()
 	createReq := &CreateWithdrawRequest{
 		Amount:        "100.00",
 		Asset:         "USDT",
 		PaymentMethod: "USDT",
 	}
-	withdraw, _, err := client.Withdraw.Create(context.Background(), createReq)
+	withdraw, _, err := client.Withdraw.Create(ctx, createReq)
 	if err != nil {
 		t.Errorf("Withdraw.Create returned error: %v", err)
 	}
@@ -119,6 +129,19 @@ func TestWithdrawService_Create(t *testing.T) {
 	if !reflect.DeepEqual(withdraw, want) {
 		t.Errorf("Withdraw.Create returned %+v, want %+v", withdraw, want)
 	}
+
+	const method = "Withdraw.Create"
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Withdraw.Create(ctx, &CreateWithdrawRequest{
+			Amount:        "100.00",
+			Asset:         "USDT",
+			PaymentMethod: "USDT",
+		})
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
+	})
 }
 
 func TestWithdrawService_CreateWithRequestValidationErr(t *testing.T) {
