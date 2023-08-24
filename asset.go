@@ -23,14 +23,23 @@ type Asset struct {
 	} `json:"icons"`
 }
 
-// GetBalance returns the balance of the asset.
+// GetBalance returns the balance of the assets.
+// If assets is empty, returns the balance of all assets,
+// otherwise returns the balance of the specified assets.
 //
 // API docs: https://docs-pay.kuna.io/reference/assetcontroller_getbalances
-func (s *AssetService) GetBalance(ctx context.Context, assets ...string) ([]*Asset, *http.Response, error) {
+func (s *AssetService) GetBalance(ctx context.Context, assets ...string) ([]*Asset, *Response, error) {
 	u := "asset/balance"
 	if len(assets) > 0 {
-		u += "?assetCodes=" + strings.ToUpper(strings.Join(assets, ","))
+		var assetCodes []string
+		for _, asset := range assets {
+			if asset = strings.TrimSpace(asset); asset != "" {
+				assetCodes = append(assetCodes, strings.ToUpper(asset))
+			}
+		}
+		u += "?assetCodes=" + strings.ToUpper(strings.Join(assetCodes, ","))
 	}
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, nil, err

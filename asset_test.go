@@ -57,15 +57,30 @@ func TestAssetService_GetBalance(t *testing.T) {
 		}`)
 	})
 
-	assets, _, err := client.Asset.GetBalance(context.Background(), []string{"USDT", "BTC"}...)
+	ctx := context.Background()
+	assets, _, err := client.Asset.GetBalance(ctx, []string{"USDT ", "  ", "btc"}...)
 	if err != nil {
 		t.Errorf("Asset.GetBalance returned error: %v", err)
 	}
 
 	want := []*Asset{assetMock(), assetMock()}
 	if !reflect.DeepEqual(assets, want) {
-		t.Errorf("Asset.GetBalance returned %+v, expected %+v", assets, want)
+		t.Errorf("Asset.GetBalance returned %+v, want %+v", assets, want)
 	}
+
+	const method = "Asset.GetBalance"
+	testBadPathParams(t, method, func() error {
+		_, _, err = client.Transaction.Get(ctx, "\n")
+		return err
+	})
+
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Asset.GetBalance(ctx, []string{"usdt", "btc"}...)
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
+	})
 }
 
 func assetMock() *Asset {

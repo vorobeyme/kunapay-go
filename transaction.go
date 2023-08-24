@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -65,7 +66,7 @@ func (o *TransactionListOpts) values() url.Values {
 		v.Add("skip", fmt.Sprintf("%d", o.Skip))
 	}
 	if o.Asset != "" {
-		v.Add("asset", string(o.Asset))
+		v.Add("asset", o.Asset)
 	}
 	if o.CreatedFrom != nil {
 		v.Add("createdFrom", o.CreatedFrom.Format(time.RFC3339))
@@ -83,7 +84,7 @@ func (o *TransactionListOpts) values() url.Values {
 // List returns information on all invoices and withdrawal operations.
 //
 // API docs: https://docs-pay.kuna.io/reference/transactioncontroller_gettransactions
-func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts) ([]*Transaction, *http.Response, error) {
+func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts) ([]*Transaction, *Response, error) {
 	u := "transaction"
 	if opts != nil {
 		u += "?" + opts.values().Encode()
@@ -110,8 +111,8 @@ func (s *TransactionService) List(ctx context.Context, opts *TransactionListOpts
 // The transaction identifier is passed in the id parameter.
 //
 // API docs: https://docs-pay.kuna.io/reference/transactioncontroller_gettransactionbyid
-func (s *TransactionService) Get(ctx context.Context, id string) (*Transaction, *http.Response, error) {
-	if id == "" {
+func (s *TransactionService) Get(ctx context.Context, id string) (*Transaction, *Response, error) {
+	if strings.TrimSpace(id) == "" {
 		return nil, nil, fmt.Errorf("transaction ID is required")
 	}
 	req, err := s.client.NewRequest(ctx, http.MethodGet, "transaction/"+id, http.NoBody)

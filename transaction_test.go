@@ -49,20 +49,29 @@ func TestTransactionService_Get(t *testing.T) {
 		}`)
 	})
 
-	transaction, _, err := client.Transaction.Get(context.Background(), "c94c0c95-e735-45ea-982e-a95f7f52ca49")
+	ctx := context.Background()
+	transaction, _, err := client.Transaction.Get(ctx, "c94c0c95-e735-45ea-982e-a95f7f52ca49")
 	if err != nil {
 		t.Errorf("Transaction.Get returned error: %v", err)
 	}
 
 	want := transactionMock()
-
 	if !reflect.DeepEqual(transaction, want) {
 		t.Errorf("Transaction.Get returned %+v, want %+v", transaction, want)
 	}
 
-	testBadPathParams(t, "Transaction.Get", func() error {
-		_, _, err = client.Transaction.Get(context.Background(), "")
+	const method = "Transaction.Get"
+	testBadPathParams(t, method, func() error {
+		_, _, err = client.Transaction.Get(ctx, "\n")
 		return err
+	})
+
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Transaction.Get(ctx, "c94c0c95-e735-45ea-982e-a95f7f52ca49")
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
 	})
 }
 
@@ -101,7 +110,9 @@ func TestTransactionService_List(t *testing.T) {
 		CreatedTo:   &createdTo,
 		OrderBy:     "createdAt",
 	}
-	transactions, _, err := client.Transaction.List(context.Background(), transactionListOptions)
+
+	ctx := context.Background()
+	transactions, _, err := client.Transaction.List(ctx, transactionListOptions)
 	if err != nil {
 		t.Errorf("Transaction.List returned error: %v", err)
 	}
@@ -110,6 +121,15 @@ func TestTransactionService_List(t *testing.T) {
 	if !reflect.DeepEqual(transactions, want) {
 		t.Errorf("Transaction.List returned %+v, want %+v", transactions, want)
 	}
+
+	const method = "Transaction.List"
+	testNewRequestAndDoFailure(t, method, client, func() (*Response, error) {
+		got, resp, err := client.Transaction.List(ctx, transactionListOptions)
+		if got != nil {
+			t.Errorf("testNewRequestAndDoFailure %v = %#v, want nil", method, got)
+		}
+		return resp, err
+	})
 }
 
 func transactionMock() *Transaction {
